@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { Navbar } from "@/components/layout/Navbar";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 import { ROUTES } from "@/utils/constants";
 
 export default function AuthenticatedLayout({
@@ -38,9 +39,10 @@ export default function AuthenticatedLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
-      <main className="page-container">{children}</main>
+      <main className="page-container flex-1">{children}</main>
+      <SiteFooter compact />
     </div>
   );
 }

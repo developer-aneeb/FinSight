@@ -6,6 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
+import { SiteHeader } from "@/components/layout/SiteHeader";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 import { ROUTES } from "@/utils/constants";
 import { Eye, EyeOff, UserPlus } from "lucide-react";
 
@@ -33,91 +35,94 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 to-brand-100 px-4">
-      <Card className="w-full max-w-md p-8">
-        {/* Brand */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-brand-700">FinSight</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Create your free account
-          </p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-brand-50 to-brand-100">
+      <SiteHeader />
+      <main className="flex items-center justify-center px-4 py-10">
+        <Card className="w-full max-w-md p-8">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-brand-700">Create Account</h1>
+            <p className="text-gray-500 text-sm mt-1">
+              Start your smarter finance journey with FinSight
+            </p>
+          </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <Input
-            label="Full Name"
-            type="text"
-            placeholder="Ahmed Khan"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            required
-            autoComplete="name"
-          />
-
-          <Input
-            label="Email"
-            type="email"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoComplete="email"
-          />
-
-          <div className="relative">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <Input
-              label="Password"
-              type={showPw ? "text" : "password"}
-              placeholder="Min. 8 characters"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              label="Full Name"
+              type="text"
+              placeholder="Ahmed Khan"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+              autoComplete="name"
+            />
+
+            <Input
+              label="Email"
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+            />
+
+            <div className="relative">
+              <Input
+                label="Password"
+                type={showPw ? "text" : "password"}
+                placeholder="Min. 8 characters"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPw(!showPw)}
+                className="absolute right-3 top-[38px] text-gray-400 hover:text-gray-600"
+                tabIndex={-1}
+              >
+                {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+
+            <Input
+              label="Confirm Password"
+              type="password"
+              placeholder="••••••••"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
               required
               autoComplete="new-password"
             />
-            <button
-              type="button"
-              onClick={() => setShowPw(!showPw)}
-              className="absolute right-3 top-[38px] text-gray-400 hover:text-gray-600"
-              tabIndex={-1}
+
+            {error && (
+              <p className="text-sm text-red-500 -mt-1">{error}</p>
+            )}
+
+            <Button
+              type="submit"
+              className="w-full"
+              isLoading={isSignupLoading}
             >
-              {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-          </div>
+              <UserPlus size={18} className="mr-2" />
+              Create Account
+            </Button>
+          </form>
 
-          <Input
-            label="Confirm Password"
-            type="password"
-            placeholder="••••••••"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-            autoComplete="new-password"
-          />
-
-          {error && (
-            <p className="text-sm text-red-500 -mt-1">{error}</p>
-          )}
-
-          <Button
-            type="submit"
-            className="w-full"
-            isLoading={isSignupLoading}
-          >
-            <UserPlus size={18} className="mr-2" />
-            Create Account
-          </Button>
-        </form>
-
-        <p className="text-center text-sm text-gray-500 mt-6">
-          Already have an account?{" "}
-          <Link
-            href={ROUTES.LOGIN}
-            className="text-brand-600 font-medium hover:text-brand-700"
-          >
-            Sign In
-          </Link>
-        </p>
-      </Card>
+          <p className="text-center text-sm text-gray-500 mt-6">
+            Already have an account?{" "}
+            <Link
+              href={ROUTES.LOGIN}
+              className="text-brand-600 font-medium hover:text-brand-700"
+            >
+              Sign In
+            </Link>
+          </p>
+        </Card>
+      </main>
+      <SiteFooter compact />
     </div>
   );
 }

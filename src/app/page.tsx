@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { ROUTES } from "@/utils/constants";
+import { SiteHeader } from "@/components/layout/SiteHeader";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 import {
   BarChart3,
   Shield,
@@ -12,24 +14,7 @@ import {
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-brand-50">
-      {/* Navbar */}
-      <nav className="flex items-center justify-between max-w-7xl mx-auto px-6 py-4">
-        <span className="text-2xl font-bold text-brand-700">FinSight</span>
-        <div className="flex items-center gap-3">
-          <Link
-            href={ROUTES.LOGIN}
-            className="text-sm font-medium text-gray-600 hover:text-brand-600 transition"
-          >
-            Sign In
-          </Link>
-          <Link
-            href={ROUTES.SIGNUP}
-            className="bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-700 transition"
-          >
-            Get Started
-          </Link>
-        </div>
-      </nav>
+      <SiteHeader />
 
       {/* Hero */}
       <section className="max-w-4xl mx-auto text-center px-6 pt-20 pb-16">
@@ -139,10 +124,7 @@ export default function HomePage() {
         </Link>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t py-8 text-center text-sm text-gray-400">
-        © {new Date().getFullYear()} FinSight. Built for Pakistan 🇵🇰
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
