@@ -2,6 +2,36 @@ import { getClient } from "@config/supabaseClient";
 import { getAdminClient } from "@config/supabaseAdminClient";
 import type { LoginCredentials, SignupCredentials, Profile } from "@customTypes/index";
 import logger from "@utils/logger";
+import { HttpError } from "@utils/error";
+
+interface SupabaseLikeError {
+  message?: string;
+  status?: number;
+  code?: string;
+}
+
+function toHttpError(error: SupabaseLikeError, fallbackMessage: string): HttpError {
+  const message = (error.message || "").toLowerCase();
+
+  if (message.includes("invalid login credentials")) {
+    return new HttpError(401, "Invalid email or password");
+  }
+
+  if (message.includes("email not confirmed")) {
+    return new HttpError(403, "Please confirm your email before logging in");
+  }
+
+  if (message.includes("user already registered") || message.includes("already been registered")) {
+    return new HttpError(409, "Email is already registered");
+  }
+
+  if (typeof error.status === "number" && error.status >= 400 && error.status < 500) {
+    return new HttpError(error.status, error.message || fallbackMessage);
+  }
+
+  logger.error("Supabase auth error", { message: error.message, status: error.status, code: error.code });
+  return new HttpError(500, fallbackMessage);
+}
 
 export async function signUp(credentials: SignupCredentials) {
   const supabase = getClient();
@@ -12,8 +42,7 @@ export async function signUp(credentials: SignupCredentials) {
   });
 
   if (error) {
-    logger.error("Signup failed", { error: error.message });
-    throw error;
+    throw toHttpError(error, "Unable to create account at the moment");
   }
 
   return data;
@@ -26,33 +55,43 @@ export async function signIn(credentials: LoginCredentials) {
     password: credentials.password,
   });
 
-  if (error) throw error;
+  if (error) {
+    throw toHttpError(error, "Unable to sign in at the moment");
+  }
   return data;
 }
 
 export async function signOut(accessToken: string) {
   const supabase = getAdminClient();
   const { error } = await supabase.auth.admin.signOut(accessToken);
-  if (error) throw error;
+  if (error) {
+    throw toHttpError(error, "Unable to sign out at the moment");
+  }
 }
 
 export async function resetPassword(email: string, redirectTo: string) {
   const supabase = getClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
-  if (error) throw error;
+  if (error) {
+    throw toHttpError(error, "Unable to send password reset email");
+  }
 }
 
 export async function refreshSession(refreshToken: string) {
   const supabase = getClient();
   const { data, error } = await supabase.auth.refreshSession({ refresh_token: refreshToken });
-  if (error) throw error;
+  if (error) {
+    throw toHttpError(error, "Unable to refresh session");
+  }
   return data;
 }
 
 export async function resendSignupConfirmation(email: string) {
   const supabase = getClient();
   const { error } = await supabase.auth.resend({ type: "signup", email });
-  if (error) throw error;
+  if (error) {
+    throw toHttpError(error, "Unable to resend confirmation email");
+  }
 }
 
 export async function confirmSignup(tokenHash: string) {
@@ -61,7 +100,9 @@ export async function confirmSignup(tokenHash: string) {
     token_hash: tokenHash,
     type: "signup",
   });
-  if (error) throw error;
+  if (error) {
+    throw toHttpError(error, "Invalid or expired confirmation link");
+  }
   return data;
 }
 
@@ -78,6 +119,8 @@ export async function updateProfile(
 ): Promise<Profile> {
   const supabase = getAdminClient();
   const { data, error } = await supabase.from("profiles").update(updates).eq("id", userId).select().single();
-  if (error) throw error;
+  if (error) {
+    throw new HttpError(500, "Unable to update profile");
+  }
   return data as Profile;
 }
