@@ -4,14 +4,7 @@ import { getProfile, updateProfile } from "@modules/auth/auth.service";
 import { asyncHandler } from "@utils/asyncHandler";
 import { ok } from "@utils/apiResponse";
 import { validateBody } from "@middleware/validate.middleware";
-import { z } from "zod";
-
-const profileUpdateSchema = z.object({
-  full_name: z.string().min(1).optional(),
-  avatar_url: z.string().url().nullable().optional(),
-  preferred_currency: z.string().min(3).max(3).optional(),
-  language: z.enum(["en", "ur"]).optional(),
-});
+import { profileUpdateSchema } from "@modules/auth/auth.validation";
 
 export const GET = asyncHandler(async (req: NextRequest) => {
   const user = await requireUser(req);

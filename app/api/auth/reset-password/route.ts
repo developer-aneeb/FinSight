@@ -1,9 +1,9 @@
 import env from "@config/env";
 import { resetPassword } from "@modules/auth/auth.service";
+import { forgotPasswordSchema } from "@modules/auth/auth.validation";
+import { validateBody } from "@middleware/validate.middleware";
 import { asyncHandler } from "@utils/asyncHandler";
 import { message } from "@utils/apiResponse";
-import { validateBody } from "@middleware/validate.middleware";
-import { forgotPasswordSchema } from "@modules/auth/auth.validation";
 
 export const POST = asyncHandler(async (req: Request) => {
   const body = validateBody(forgotPasswordSchema, await req.json());
@@ -12,8 +12,3 @@ export const POST = asyncHandler(async (req: Request) => {
   await resetPassword(body.email, redirectTo);
   return message("Password reset email sent");
 });
-
-
-
-
-
