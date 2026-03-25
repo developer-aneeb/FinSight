@@ -5,12 +5,12 @@
 
 // ─── Database Enums ─────────────────────────────────────────
 
-export type TransactionType = "income" | "expense";
-export type RecurrenceInterval = "none" | "daily" | "weekly" | "monthly" | "yearly";
-export type AlertSeverity = "info" | "warning" | "critical";
-export type AlertStatus = "unread" | "read" | "dismissed";
+export type TransactionType = string;
+export type RecurrenceInterval = string;
+export type AlertSeverity = string;
+export type AlertStatus = string;
 export type UserRole = "user" | "admin";
-export type BudgetPeriod = "weekly" | "monthly" | "yearly";
+export type BudgetPeriod = string;
 
 // ─── Database Models ────────────────────────────────────────
 
@@ -20,7 +20,6 @@ export interface Profile {
   email: string;
   avatar_url: string | null;
   preferred_currency: string;
-  language: "en" | "ur";
   role: UserRole;
   created_at: string;
   updated_at: string;
@@ -55,7 +54,6 @@ export interface Transaction {
   description: string;
   notes: string;
   transaction_date: string;
-  receipt_url: string | null;
   is_recurring: boolean;
   recurrence: RecurrenceInterval;
   next_recurrence: string | null;
@@ -227,6 +225,17 @@ export interface LoginCredentials {
 
 export interface SignupCredentials extends LoginCredentials {
   full_name: string;
+}
+
+export interface UpdateProfileInput {
+  full_name?: string;
+  avatar_url?: string | null;
+  preferred_currency?: string;
+}
+
+export interface ForgotPasswordInput {
+  email: string;
+  redirectTo?: string;
 }
 
 export interface AuthState {
