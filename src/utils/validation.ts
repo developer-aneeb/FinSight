@@ -21,18 +21,34 @@ export const signupSchema = z.object({
   full_name: z.string().min(2, "Name must be at least 2 characters").max(100),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  redirectTo: z.string().url("Invalid redirect URL").optional(),
+});
+
+export const profileUpdateSchema = z
+  .object({
+    full_name: z.string().min(2, "Name must be at least 2 characters").max(100).optional(),
+    avatar_url: z.string().url("Invalid avatar URL").nullable().optional(),
+    preferred_currency: z
+      .string()
+      .length(3, "Currency must be a 3-letter code")
+      .transform((value) => value.toUpperCase())
+      .optional(),
+  })
+  .refine((payload) => Object.keys(payload).length > 0, {
+    message: "At least one field is required",
+  });
+
 export const transactionSchema = z.object({
-  type: z.enum(["income", "expense"]),
+  type: z.string().trim().min(1, "Type is required"),
   amount: z.number().positive("Amount must be positive").max(99999999.99),
   category_id: z.string().uuid().optional(),
   description: z.string().max(500).optional().default(""),
   notes: z.string().max(2000).optional().default(""),
   transaction_date: z.string().optional(),
   is_recurring: z.boolean().optional().default(false),
-  recurrence: z
-    .enum(["none", "daily", "weekly", "monthly", "yearly"])
-    .optional()
-    .default("none"),
+  recurrence: z.string().trim().min(1, "Recurrence is required").optional().default("none"),
   tags: z.array(z.string().uuid()).optional().default([]),
 });
 
@@ -40,7 +56,7 @@ export const budgetSchema = z.object({
   category_id: z.string().uuid().optional(),
   name: z.string().min(1, "Budget name is required").max(100),
   amount_limit: z.number().positive("Budget limit must be positive"),
-  period: z.enum(["weekly", "monthly", "yearly"]).optional().default("monthly"),
+  period: z.string().trim().min(1, "Period is required").optional().default("monthly"),
   start_date: z.string().optional(),
   end_date: z.string().optional(),
 });

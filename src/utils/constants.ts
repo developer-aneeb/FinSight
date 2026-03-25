@@ -59,6 +59,7 @@ export const ROUTES = {
   HOME: "/",
   LOGIN: "/login",
   SIGNUP: "/signup",
+  FORGOT_PASSWORD: "/forgot-password",
   DASHBOARD: "/dashboard",
   TRANSACTIONS: "/transactions",
   TRANSACTION_DETAIL: (id: string) => `/transactions/${id}`,
