@@ -5,7 +5,6 @@ export interface UserProfile {
   role?: string;
   avatar_url?: string | null;
   preferred_currency?: string;
-  language?: string;
   created_at?: string;
   updated_at?: string;
 }

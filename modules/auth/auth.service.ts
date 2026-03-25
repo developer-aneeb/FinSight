@@ -10,6 +10,21 @@ interface SupabaseLikeError {
   code?: string;
 }
 
+async function getRoleByUserId(userId: string): Promise<Profile["role"]> {
+  const supabase = getAdminClient();
+
+  const { data: userRow, error: userError } = await supabase.from("users").select("role_id").eq("id", userId).single();
+
+  if (!userError && userRow?.role_id) {
+    const { data: roleRow } = await supabase.from("roles").select("name").eq("id", userRow.role_id).single();
+    if (roleRow?.name === "admin") {
+      return "admin";
+    }
+  }
+
+  return "user";
+}
+
 function toHttpError(error: SupabaseLikeError, fallbackMessage: string): HttpError {
   const message = (error.message || "").toLowerCase();
 
@@ -108,19 +123,56 @@ export async function confirmSignup(tokenHash: string) {
 
 export async function getProfile(userId: string): Promise<Profile | null> {
   const supabase = getAdminClient();
-  const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).single();
-  if (error) return null;
-  return data as Profile;
+  const { data, error } = await supabase
+    .from("users")
+    .select("id, email, full_name, avatar_url, preferred_currency, created_at, updated_at, role_id")
+    .eq("id", userId)
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  const role = await getRoleByUserId(userId);
+
+  return {
+    id: data.id,
+    email: data.email,
+    full_name: data.full_name,
+    avatar_url: data.avatar_url,
+    preferred_currency: data.preferred_currency,
+    role,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+  };
 }
 
 export async function updateProfile(
   userId: string,
-  updates: Partial<Pick<Profile, "full_name" | "avatar_url" | "preferred_currency" | "language">>
+  updates: Partial<Pick<Profile, "full_name" | "avatar_url" | "preferred_currency">>
 ): Promise<Profile> {
   const supabase = getAdminClient();
-  const { data, error } = await supabase.from("profiles").update(updates).eq("id", userId).select().single();
-  if (error) {
+  const { data, error } = await supabase
+    .from("users")
+    .update(updates)
+    .eq("id", userId)
+    .select("id, email, full_name, avatar_url, preferred_currency, created_at, updated_at, role_id")
+    .single();
+
+  if (error || !data) {
     throw new HttpError(500, "Unable to update profile");
   }
-  return data as Profile;
+
+  const role = await getRoleByUserId(userId);
+
+  return {
+    id: data.id,
+    email: data.email,
+    full_name: data.full_name,
+    avatar_url: data.avatar_url,
+    preferred_currency: data.preferred_currency,
+    role,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+  };
 }

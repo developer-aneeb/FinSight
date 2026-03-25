@@ -52,7 +52,6 @@ export const profileUpdateSchema = z
       .toUpperCase()
       .length(3, "preferred_currency must be a 3-letter currency code")
       .optional(),
-    language: z.enum(["en", "ur"]).optional(),
   })
   .refine((payload) => Object.keys(payload).length > 0, {
     message: "At least one profile field is required",

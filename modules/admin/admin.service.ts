@@ -4,7 +4,7 @@ export async function getDashboardStats() {
   const supabase = getAdminClient();
 
   const [usersResult, transactionsResult, budgetsResult] = await Promise.all([
-    supabase.from("profiles").select("*", { count: "exact", head: true }),
+    supabase.from("users").select("*", { count: "exact", head: true }),
     supabase.from("transactions").select("*", { count: "exact", head: true }),
     supabase.from("budgets").select("*", { count: "exact", head: true }),
   ]);
