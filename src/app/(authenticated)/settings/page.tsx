@@ -1,20 +1,60 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useAlerts, useDismissAlert } from "@/hooks/useAlerts";
 import { AlertItem } from "@/components/alerts/AlertItem";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { profileUpdateSchema } from "@/utils/validation";
 import { User, Bell, Shield, LogOut } from "lucide-react";
 import type { Alert } from "@/types";
 
 export default function SettingsPage() {
-  const { user, logout } = useAuth();
+  const { user, logout, updateProfile, isUpdateProfileLoading, requestPasswordReset, isForgotPasswordLoading } = useAuth();
   const { data: alertsData, isLoading: alertsLoading } = useAlerts();
   const dismissMutation = useDismissAlert();
+  const [fullName, setFullName] = useState("");
+  const [preferredCurrency, setPreferredCurrency] = useState("PKR");
+  const [profileError, setProfileError] = useState("");
 
   const alerts: Alert[] = alertsData?.data ?? [];
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    setFullName(user.full_name ?? "");
+    setPreferredCurrency((user.preferred_currency ?? "PKR").toUpperCase());
+  }, [user]);
+
+  const handleProfileSave = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const payload = {
+      full_name: fullName,
+      preferred_currency: preferredCurrency,
+    };
+
+    const parsed = profileUpdateSchema.safeParse(payload);
+    if (!parsed.success) {
+      setProfileError(parsed.error.issues[0]?.message || "Invalid profile details");
+      return;
+    }
+
+    setProfileError("");
+    updateProfile(parsed.data);
+  };
+
+  const handlePasswordReset = () => {
+    if (!user?.email) {
+      return;
+    }
+
+    requestPasswordReset({ email: user.email });
+  };
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
@@ -26,18 +66,26 @@ export default function SettingsPage() {
           <User size={20} className="text-brand-600" />
           <h2 className="font-semibold text-gray-900">Profile</h2>
         </CardHeader>
-        <div className="p-4 pt-0 space-y-4">
+        <form onSubmit={handleProfileSave} className="p-4 pt-0 space-y-4">
           <Input label="Email" value={user?.email ?? ""} disabled />
           <Input
             label="Full Name"
-            value={user?.full_name ?? ""}
-            disabled
-            placeholder="Set in your Supabase profile"
+            value={fullName}
+            onChange={(event) => setFullName(event.target.value)}
+            required
           />
-          <p className="text-xs text-gray-400">
-            Profile editing will be available in a future update.
-          </p>
-        </div>
+          <Input
+            label="Preferred Currency"
+            value={preferredCurrency}
+            onChange={(event) => setPreferredCurrency(event.target.value.toUpperCase())}
+            maxLength={3}
+            required
+          />
+          {profileError && <p className="text-sm text-red-600">{profileError}</p>}
+          <div className="flex justify-end">
+            <Button type="submit" isLoading={isUpdateProfileLoading}>Save Profile</Button>
+          </div>
+        </form>
       </Card>
 
       {/* Alerts / Notifications */}
@@ -75,8 +123,16 @@ export default function SettingsPage() {
         </CardHeader>
         <div className="p-4 pt-0 space-y-4">
           <p className="text-sm text-gray-500">
-            Password reset and 2FA settings are managed through Supabase Auth.
+            Send a password reset link to your email to update your password securely.
           </p>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handlePasswordReset}
+            isLoading={isForgotPasswordLoading}
+          >
+            Send Password Reset Email
+          </Button>
         </div>
       </Card>
 

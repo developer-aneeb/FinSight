@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/Card";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { ROUTES } from "@/utils/constants";
+import { loginSchema } from "@/utils/validation";
 import { Eye, EyeOff, LogIn } from "lucide-react";
 
 export default function LoginPage() {
@@ -16,10 +17,29 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    login({ email, password });
+
+    const parsed = loginSchema.safeParse({ email, password });
+    if (!parsed.success) {
+      const nextErrors: { email?: string; password?: string } = {};
+      for (const issue of parsed.error.issues) {
+        const field = issue.path[0];
+        if (field === "email") {
+          nextErrors.email = issue.message;
+        }
+        if (field === "password") {
+          nextErrors.password = issue.message;
+        }
+      }
+      setErrors(nextErrors);
+      return;
+    }
+
+    setErrors({});
+    login(parsed.data);
   };
 
   return (
@@ -41,6 +61,7 @@ export default function LoginPage() {
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              error={errors.email}
               required
               autoComplete="email"
             />
@@ -52,6 +73,7 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                error={errors.password}
                 required
                 autoComplete="current-password"
               />
@@ -74,6 +96,15 @@ export default function LoginPage() {
               Sign In
             </Button>
           </form>
+
+          <div className="mt-4 text-right">
+            <Link
+              href={ROUTES.FORGOT_PASSWORD}
+              className="text-sm text-brand-600 font-medium hover:text-brand-700"
+            >
+              Forgot password?
+            </Link>
+          </div>
 
           <p className="text-center text-sm text-gray-500 mt-6">
             Don&apos;t have an account?{" "}

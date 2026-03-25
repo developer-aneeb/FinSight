@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/Card";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { ROUTES } from "@/utils/constants";
+import { signupSchema } from "@/utils/validation";
 import { Eye, EyeOff, UserPlus } from "lucide-react";
 
 export default function SignupPage() {
@@ -19,19 +20,45 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<{ full_name?: string; email?: string; password?: string }>({});
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setFieldErrors({});
+
+    const parsed = signupSchema.safeParse({
+      full_name: fullName,
+      email,
+      password,
+    });
+
+    if (!parsed.success) {
+      const nextErrors: { full_name?: string; email?: string; password?: string } = {};
+
+      for (const issue of parsed.error.issues) {
+        const field = issue.path[0];
+        if (field === "full_name") {
+          nextErrors.full_name = issue.message;
+        }
+        if (field === "email") {
+          nextErrors.email = issue.message;
+        }
+        if (field === "password") {
+          nextErrors.password = issue.message;
+        }
+      }
+
+      setFieldErrors(nextErrors);
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
     }
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
-      return;
-    }
-    signup({ email, password, full_name: fullName });
+
+    signup(parsed.data);
   };
 
   return (
@@ -53,6 +80,7 @@ export default function SignupPage() {
               placeholder="Ahmed Khan"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
+              error={fieldErrors.full_name}
               required
               autoComplete="name"
             />
@@ -63,6 +91,7 @@ export default function SignupPage() {
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              error={fieldErrors.email}
               required
               autoComplete="email"
             />
@@ -74,6 +103,7 @@ export default function SignupPage() {
                 placeholder="Min. 8 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                error={fieldErrors.password}
                 required
                 autoComplete="new-password"
               />

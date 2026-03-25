@@ -87,7 +87,7 @@ export default function HomePage() {
               icon: <Shield size={24} />,
               title: "Secure & Private",
               description:
-                "Row-level security ensures your data is only visible to you. Built on enterprise-grade Supabase.",
+                "Row-level security ensures your data is only visible to you, with secure backend-managed data access.",
             },
           ].map((feature) => (
             <div
