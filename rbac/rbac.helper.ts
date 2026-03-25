@@ -1,10 +1,10 @@
 import { Role } from "./roles.enum";
-import { PERMISSIONS } from "./permissions";
+import { Action, Resource, ROLE_PERMISSIONS } from "./permissions";
 
-export function hasPermission(role: Role, resource: keyof typeof PERMISSIONS, action: string): boolean {
-  if (role === Role.ADMIN) {
-    return PERMISSIONS[resource].includes(action as never);
-  }
+export function hasPermission(role: Role, resource: Resource, action: Action): boolean {
+  return ROLE_PERMISSIONS[role][resource].includes(action);
+}
 
-  return role === Role.USER && action === "read";
+export function isAdmin(role: Role): boolean {
+  return role === Role.ADMIN;
 }
