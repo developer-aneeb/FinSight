@@ -5,7 +5,7 @@
 import { useAuthStore } from "@/store/authStore";
 import type { ApiResponse } from "@/types";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 /** Fetch wrapper that auto-attaches auth token */
 async function apiFetch<T>(
@@ -32,7 +32,22 @@ async function apiFetch<T>(
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.error || data.message || "Request failed");
+    const details = Array.isArray(data?.details)
+      ? data.details
+          .map((entry: unknown) => {
+            if (typeof entry === "string") {
+              return entry;
+            }
+            if (entry && typeof entry === "object" && "message" in entry) {
+              return String((entry as { message: unknown }).message);
+            }
+            return "";
+          })
+          .filter(Boolean)
+          .join(", ")
+      : "";
+
+    throw new Error(details || data.error || data.message || "Request failed");
   }
 
   return data;

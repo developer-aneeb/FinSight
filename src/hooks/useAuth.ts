@@ -7,10 +7,16 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
-import { apiPost, apiGet } from "./apiClient";
+import { apiPost, apiGet, apiPatch } from "./apiClient";
 import { ROUTES } from "@/utils/constants";
 import toast from "react-hot-toast";
-import type { LoginCredentials, SignupCredentials, Profile } from "@/types";
+import type {
+  ForgotPasswordInput,
+  LoginCredentials,
+  SignupCredentials,
+  Profile,
+  UpdateProfileInput,
+} from "@/types";
 
 export function useAuth() {
   const router = useRouter();
@@ -31,7 +37,7 @@ export function useAuth() {
 
         // Then try to fetch the full user profile
         try {
-          const profileRes = await apiGet<Profile>("/auth/me");
+          const profileRes = await apiGet<Profile>("/auth/profile");
           if (profileRes.data) {
             setUser(profileRes.data, token);
           }
@@ -70,6 +76,31 @@ export function useAuth() {
     },
   });
 
+  const forgotPasswordMutation = useMutation({
+    mutationFn: (payload: ForgotPasswordInput) => apiPost("/auth/forgot-password", payload),
+    onSuccess: () => {
+      toast.success("Password reset email sent");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Unable to send password reset email");
+    },
+  });
+
+  const updateProfileMutation = useMutation({
+    mutationFn: (updates: UpdateProfileInput) => apiPatch<Profile>("/auth/profile", updates),
+    onSuccess: (response) => {
+      const token = useAuthStore.getState().accessToken;
+      if (response.data) {
+        setUser(response.data, token);
+      }
+      toast.success("Profile updated successfully");
+      queryClient.invalidateQueries();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Unable to update profile");
+    },
+  });
+
   return {
     user,
     isAuthenticated,
@@ -77,7 +108,11 @@ export function useAuth() {
     login: loginMutation.mutate,
     signup: signupMutation.mutate,
     logout: logoutMutation.mutate,
+    requestPasswordReset: forgotPasswordMutation.mutate,
+    updateProfile: updateProfileMutation.mutate,
     isLoginLoading: loginMutation.isPending,
     isSignupLoading: signupMutation.isPending,
+    isForgotPasswordLoading: forgotPasswordMutation.isPending,
+    isUpdateProfileLoading: updateProfileMutation.isPending,
   };
 }

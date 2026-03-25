@@ -10,37 +10,61 @@ import { useFilterStore } from "@/store/filterStore";
 import toast from "react-hot-toast";
 import type {
   Transaction,
-  PaginatedResponse,
   CreateTransactionInput,
   UpdateTransactionInput,
   ApiResponse,
 } from "@/types";
 
 const TRANSACTIONS_KEY = "transactions";
+type TransactionsListResponse = ApiResponse<Transaction[]> & {
+  pagination: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  };
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
 
 // --------------- List ---------------
 
 export function useTransactions(page = 1, pageSize = 20) {
-  const filters = useFilterStore();
+  const searchQuery = useFilterStore((state) => state.searchQuery);
+  const selectedType = useFilterStore((state) => state.selectedType);
+  const selectedCategoryId = useFilterStore((state) => state.selectedCategoryId);
+  const dateFrom = useFilterStore((state) => state.dateFrom);
+  const dateTo = useFilterStore((state) => state.dateTo);
+  const amountMin = useFilterStore((state) => state.amountMin);
+  const amountMax = useFilterStore((state) => state.amountMax);
 
   const params = new URLSearchParams();
   params.set("page", String(page));
   params.set("pageSize", String(pageSize));
-  if (filters.searchQuery) params.set("search", filters.searchQuery);
-  if (filters.selectedType && filters.selectedType !== "all")
-    params.set("type", filters.selectedType);
-  if (filters.selectedCategoryId)
-    params.set("categoryId", filters.selectedCategoryId);
-  if (filters.dateFrom) params.set("dateFrom", filters.dateFrom);
-  if (filters.dateTo) params.set("dateTo", filters.dateTo);
-  if (filters.amountMin != null)
-    params.set("amountMin", String(filters.amountMin));
-  if (filters.amountMax != null)
-    params.set("amountMax", String(filters.amountMax));
+  if (searchQuery) params.set("search", searchQuery);
+  if (selectedType && selectedType !== "all") params.set("type", selectedType);
+  if (selectedCategoryId) params.set("categoryId", selectedCategoryId);
+  if (dateFrom) params.set("dateFrom", dateFrom);
+  if (dateTo) params.set("dateTo", dateTo);
+  if (amountMin != null) params.set("amountMin", String(amountMin));
+  if (amountMax != null) params.set("amountMax", String(amountMax));
 
-  return useQuery<PaginatedResponse<Transaction>>({
-    queryKey: [TRANSACTIONS_KEY, page, pageSize, { ...filters }],
-    queryFn: () => apiGet(`/transactions?${params.toString()}`) as Promise<PaginatedResponse<Transaction>>,
+  return useQuery<TransactionsListResponse>({
+    queryKey: [
+      TRANSACTIONS_KEY,
+      page,
+      pageSize,
+      searchQuery,
+      selectedType,
+      selectedCategoryId,
+      dateFrom,
+      dateTo,
+      amountMin,
+      amountMax,
+    ],
+    queryFn: () => apiGet<Transaction[]>(`/transactions?${params.toString()}`) as Promise<TransactionsListResponse>,
   });
 }
 
