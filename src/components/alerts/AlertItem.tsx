@@ -19,16 +19,17 @@ const severityIcons = {
   info: Info,
   warning: AlertTriangle,
   critical: AlertCircle,
-};
+} as const;
 
 export function AlertItem({ alert, onDismiss }: AlertItemProps) {
-  const Icon = severityIcons[alert.severity];
+  const Icon = severityIcons[alert.severity as keyof typeof severityIcons] ?? Info;
+  const severityClass = ALERT_SEVERITY_COLORS[alert.severity] ?? ALERT_SEVERITY_COLORS.info;
 
   return (
     <div
       className={cn(
         "flex items-start gap-3 rounded-lg border p-3",
-        ALERT_SEVERITY_COLORS[alert.severity]
+        severityClass
       )}
       role="alert"
     >
