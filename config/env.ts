@@ -1,8 +1,3 @@
-import dotenv from "dotenv";
-import path from "path";
-
-dotenv.config({ path: path.resolve(process.cwd(), ".env") });
-
 function parseNumber(value: string | undefined, fallback: number): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
@@ -42,6 +37,8 @@ export const env = {
 
   logLevel: process.env.LOG_LEVEL || "info",
   enableFileLogging: parseBoolean(process.env.ENABLE_FILE_LOGGING),
+
+  openAiApiKey: process.env.OPENAI_API_KEY,
 } as const;
 
 export default env;
