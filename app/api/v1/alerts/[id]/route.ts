@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireUser } from "@middleware/auth.middleware";
+import { requireStandardUser } from "@middleware/auth.middleware";
 import { updateAlertStatus } from "@modules/alerts/alerts.service";
 import { validateBody } from "@middleware/validate.middleware";
 import { asyncHandler } from "@utils/asyncHandler";
@@ -13,7 +13,7 @@ const updateAlertSchema = z.object({
 });
 
 export const PATCH = asyncHandler(async (req: NextRequest, context: { params: { id: string } }) => {
-  const user = await requireUser(req);
+  const user = await requireStandardUser(req);
   const payload = validateBody(updateAlertSchema, await req.json());
   const updated = await updateAlertStatus(user.id, context.params.id, payload.status);
 
