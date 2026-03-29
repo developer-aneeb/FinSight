@@ -12,9 +12,16 @@ const readAllSchema = z.object({
   status: z.enum(["read"]).optional(),
 });
 
+const listAlertsQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(200).default(200),
+});
+
 export const GET = asyncHandler(async (req: NextRequest) => {
   const user = await requireStandardUser(req);
-  const alerts = await listAlerts(user.id);
+  const params = validateBody(listAlertsQuerySchema, {
+    limit: req.nextUrl.searchParams.get("limit") || undefined,
+  });
+  const alerts = await listAlerts(user.id, params.limit);
   return withCors(req, ok(alerts), "GET,PATCH,OPTIONS");
 });
 
