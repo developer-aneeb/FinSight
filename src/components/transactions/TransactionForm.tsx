@@ -4,7 +4,7 @@
  */
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
@@ -33,12 +33,28 @@ export function TransactionForm({
   const [categoryId, setCategoryId] = useState(transaction?.category_id || "");
   const [description, setDescription] = useState(transaction?.description || "");
   const [notes, setNotes] = useState(transaction?.notes || "");
+  const [tags, setTags] = useState((transaction?.tags || []).map((tag) => tag.name).join(", "));
   const [date, setDate] = useState(
     transaction?.transaction_date || new Date().toISOString().split("T")[0]
   );
   const [isRecurring, setIsRecurring] = useState(transaction?.is_recurring || false);
-  const [recurrence, setRecurrence] = useState(transaction?.recurrence || "none");
+  const [recurrence, setRecurrence] = useState(
+    transaction?.is_recurring ? (transaction?.recurrence || "monthly") : "none"
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    setType(transaction?.type || "expense");
+    setAmount(transaction?.amount?.toString() || "");
+    setCategoryId(transaction?.category_id || "");
+    setDescription(transaction?.description || "");
+    setNotes(transaction?.notes || "");
+    setTags((transaction?.tags || []).map((tag) => tag.name).join(", "));
+    setDate(transaction?.transaction_date || new Date().toISOString().split("T")[0]);
+    setIsRecurring(transaction?.is_recurring || false);
+    setRecurrence(transaction?.is_recurring ? (transaction?.recurrence || "monthly") : "none");
+    setErrors({});
+  }, [transaction]);
 
   const filteredCategories = categories.filter((c) => {
     // Income categories: Salary, Freelance, Investments, Other Income
@@ -55,6 +71,9 @@ export function TransactionForm({
     if (!description.trim()) {
       newErrors.description = "Description is required";
     }
+    if (isRecurring && recurrence === "none") {
+      newErrors.recurrence = "Please select a recurrence frequency";
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -69,6 +88,10 @@ export function TransactionForm({
       category_id: categoryId || undefined,
       description: description.trim(),
       notes: notes.trim(),
+      tags: tags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean),
       transaction_date: date,
       is_recurring: isRecurring,
       recurrence: isRecurring ? recurrence as CreateTransactionInput["recurrence"] : "none",
@@ -151,13 +174,24 @@ export function TransactionForm({
         maxLength={2000}
       />
 
+      <Input
+        label="Tags (optional)"
+        placeholder="e.g., groceries, essentials"
+        value={tags}
+        onChange={(e) => setTags(e.target.value)}
+      />
+
       {/* Recurring */}
       <div className="flex items-center gap-3">
         <input
           id="recurring"
           type="checkbox"
           checked={isRecurring}
-          onChange={(e) => setIsRecurring(e.target.checked)}
+          onChange={(e) => {
+            const checked = e.target.checked;
+            setIsRecurring(checked);
+            setRecurrence(checked ? (recurrence === "none" ? "monthly" : recurrence) : "none");
+          }}
           className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
         />
         <label htmlFor="recurring" className="text-sm text-gray-700">
@@ -170,6 +204,7 @@ export function TransactionForm({
           label="Frequency"
           value={recurrence}
           onChange={(e) => setRecurrence(e.target.value as RecurrenceInterval)}
+          error={errors.recurrence}
           options={[
             { value: "daily", label: "Daily" },
             { value: "weekly", label: "Weekly" },

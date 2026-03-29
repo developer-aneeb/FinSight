@@ -32,10 +32,12 @@ export function FilterSidebar({
     dateTo,
     amountMin,
     amountMax,
+    tags,
     setSelectedType,
     setSelectedCategory,
     setDateRange,
     setAmountRange,
+    setTags,
     resetAll,
   } = useFilterStore();
 
@@ -140,6 +142,20 @@ export function FilterSidebar({
               aria-label="Maximum amount"
             />
           </div>
+        </div>
+
+        {/* Tags */}
+        <div>
+          <p className="mb-1.5 text-sm font-medium text-gray-700">Tags (comma separated)</p>
+          <Input
+            type="text"
+            placeholder="e.g. food, travel"
+            value={tags.join(", ")}
+            onChange={(e) => {
+              const val = e.target.value;
+              setTags(val.split(",").map(t => t.trim()).filter(Boolean));
+            }}
+          />
         </div>
 
         {/* Action buttons */}

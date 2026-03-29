@@ -12,22 +12,34 @@ import { useAuth } from "@/hooks/useAuth";
 import { ROUTES } from "@/utils/constants";
 import {
   LayoutDashboard,
+  Users,
   ArrowLeftRight,
   PiggyBank,
   BarChart3,
+  BellRing,
+  ShieldCheck,
   Settings,
   Bell,
   LogOut,
   Menu,
   X,
+  Sparkles,
 } from "lucide-react";
 
-const navItems = [
+const baseNavItems = [
   { label: "Dashboard", href: ROUTES.DASHBOARD, icon: LayoutDashboard },
   { label: "Transactions", href: ROUTES.TRANSACTIONS, icon: ArrowLeftRight },
   { label: "Budgets", href: ROUTES.BUDGETS, icon: PiggyBank },
   { label: "Analytics", href: ROUTES.ANALYTICS, icon: BarChart3 },
+  { label: "Insights", href: ROUTES.INSIGHTS, icon: Sparkles },
+  { label: "Notifications", href: ROUTES.NOTIFICATIONS, icon: BellRing },
   { label: "Settings", href: ROUTES.SETTINGS, icon: Settings },
+];
+
+const adminNavItems = [
+  { label: "Admin", href: ROUTES.ADMIN, icon: ShieldCheck },
+  { label: "Users", href: ROUTES.ADMIN_USERS, icon: Users },
+  { label: "Notifications", href: ROUTES.ADMIN_NOTIFICATIONS, icon: BellRing },
 ];
 
 export function Navbar() {
@@ -36,12 +48,16 @@ export function Navbar() {
   const { logout } = useAuth();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
+  const navItems = user?.role === "admin" ? adminNavItems : baseNavItems;
+
+  const homeRoute = user?.role === "admin" ? ROUTES.ADMIN : ROUTES.DASHBOARD;
+
   return (
     <header className="sticky top-0 z-40 border-b border-gray-200 bg-white">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         {/* Logo */}
         <Link
-          href={ROUTES.DASHBOARD}
+          href={homeRoute}
           className="flex items-center gap-2 text-xl font-bold text-brand-700"
         >
           💸 <span>FinSight</span>
@@ -51,7 +67,7 @@ export function Navbar() {
         <nav className="hidden items-center gap-1 md:flex" aria-label="Main navigation">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
               <Link
                 key={item.href}
@@ -75,7 +91,7 @@ export function Navbar() {
         <div className="flex items-center gap-3">
           {/* Alerts bell */}
           <Link
-            href="/dashboard#alerts"
+            href={user?.role === "admin" ? ROUTES.ADMIN_NOTIFICATIONS : ROUTES.NOTIFICATIONS}
             className="relative rounded-lg p-2 text-gray-500 hover:bg-gray-100"
             aria-label="View alerts"
           >
@@ -113,7 +129,7 @@ export function Navbar() {
         <nav className="border-t bg-white px-4 py-3 md:hidden" aria-label="Mobile navigation">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
               <Link
                 key={item.href}
