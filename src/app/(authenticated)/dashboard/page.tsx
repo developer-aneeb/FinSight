@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useDashboardSummary } from "@/hooks/useAnalytics";
 import { useAlerts } from "@/hooks/useAlerts";
+import { useDismissInsight, useGenerateInsights, useInsights } from "@/hooks/useInsights";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { MonthlyTrendChart } from "@/components/dashboard/MonthlyTrendChart";
 import { CategoryBreakdown } from "@/components/dashboard/CategoryBreakdown";
@@ -10,6 +11,7 @@ import { BudgetProgress } from "@/components/budgets/BudgetProgress";
 import { TransactionItem } from "@/components/transactions/TransactionItem";
 import { AlertItem } from "@/components/alerts/AlertItem";
 import { Card, CardHeader } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { Skeleton, CardSkeleton } from "@/components/ui/Skeleton";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { ROUTES } from "@/utils/constants";
@@ -26,9 +28,13 @@ import {
 export default function DashboardPage() {
   const { data, isLoading, error } = useDashboardSummary();
   const { data: alertsData } = useAlerts();
+  const { data: insightsData } = useInsights(3);
+  const generateInsights = useGenerateInsights();
+  const dismissInsight = useDismissInsight();
 
   const summary = data?.data;
   const alerts: Alert[] = alertsData?.data ?? [];
+  const insights = insightsData?.data ?? [];
   const unreadAlerts = alerts.filter((a: Alert) => a.status === "unread");
 
   if (isLoading) return <DashboardSkeleton />;
@@ -55,7 +61,7 @@ export default function DashboardPage() {
         </div>
         {unreadAlerts.length > 0 && (
           <Link
-            href={ROUTES.SETTINGS}
+            href={ROUTES.NOTIFICATIONS}
             className="flex items-center gap-2 bg-amber-50 text-amber-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-amber-100 transition"
           >
             <Bell size={16} />
@@ -176,6 +182,40 @@ export default function DashboardPage() {
           </div>
         </Card>
       )}
+
+      <Card>
+        <CardHeader className="flex items-center justify-between">
+          <h2 className="section-header mb-0">AI Insights</h2>
+          <Button
+            size="sm"
+            variant="outline"
+            isLoading={generateInsights.isPending}
+            onClick={() => generateInsights.mutate()}
+          >
+            Refresh Insights
+          </Button>
+        </CardHeader>
+        <div className="p-4 pt-0 space-y-3">
+          {insights.length === 0 ? (
+            <p className="text-gray-500 text-sm">No insights yet. Click Refresh Insights to generate recommendations.</p>
+          ) : (
+            insights.map((insight) => (
+              <div key={insight.id} className="rounded-lg border border-gray-200 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-semibold text-gray-900 text-sm">{insight.title}</p>
+                  <button
+                    className="text-xs text-gray-500 hover:text-gray-700"
+                    onClick={() => dismissInsight.mutate(insight.id)}
+                  >
+                    Dismiss
+                  </button>
+                </div>
+                <p className="mt-1 text-sm text-gray-700">{insight.body}</p>
+              </div>
+            ))
+          )}
+        </div>
+      </Card>
     </div>
   );
 }

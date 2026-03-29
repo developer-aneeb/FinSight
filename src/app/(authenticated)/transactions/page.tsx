@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useTransactions, useCreateTransaction, useDeleteTransaction } from "@/hooks/useTransactions";
+import { useTransactions, useCreateTransaction, useDeleteTransaction, useUpdateTransaction } from "@/hooks/useTransactions";
 import { useCategories } from "@/hooks/useCategories";
 import { TransactionItem } from "@/components/transactions/TransactionItem";
 import { TransactionForm } from "@/components/transactions/TransactionForm";
@@ -11,16 +11,18 @@ import { Modal } from "@/components/ui/Modal";
 import { TransactionListSkeleton } from "@/components/ui/Skeleton";
 import { Card } from "@/components/ui/Card";
 import { Plus, SlidersHorizontal } from "lucide-react";
-import type { CreateTransactionInput } from "@/types";
+import type { CreateTransactionInput, Transaction } from "@/types";
 
 export default function TransactionsPage() {
   const [page, setPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
   const { data, isLoading } = useTransactions(page);
   const { data: categoriesData } = useCategories();
   const createMutation = useCreateTransaction();
+  const updateMutation = useUpdateTransaction();
   const deleteMutation = useDeleteTransaction();
 
   const transactions = data?.data ?? [];
@@ -31,6 +33,30 @@ export default function TransactionsPage() {
     createMutation.mutate(input, {
       onSuccess: () => setShowForm(false),
     });
+  };
+
+  const handleUpdate = (input: CreateTransactionInput) => {
+    if (!editingTransaction) return;
+
+    updateMutation.mutate(
+      { id: editingTransaction.id, ...input },
+      {
+        onSuccess: () => {
+          setShowForm(false);
+          setEditingTransaction(null);
+        },
+      }
+    );
+  };
+
+  const handleOpenCreate = () => {
+    setEditingTransaction(null);
+    setShowForm(true);
+  };
+
+  const handleOpenEdit = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setShowForm(true);
   };
 
   const handleDelete = (id: string) => {
@@ -60,7 +86,7 @@ export default function TransactionsPage() {
             <SlidersHorizontal size={16} className="mr-1" />
             Filters
           </Button>
-          <Button size="sm" onClick={() => setShowForm(true)}>
+          <Button size="sm" onClick={handleOpenCreate}>
             <Plus size={16} className="mr-1" />
             Add Transaction
           </Button>
@@ -88,7 +114,7 @@ export default function TransactionsPage() {
             ) : transactions.length === 0 ? (
               <div className="p-12 text-center">
                 <p className="text-gray-400 mb-4">No transactions found</p>
-                <Button size="sm" onClick={() => setShowForm(true)}>
+                <Button size="sm" onClick={handleOpenCreate}>
                   <Plus size={16} className="mr-1" />
                   Add your first transaction
                 </Button>
@@ -99,6 +125,7 @@ export default function TransactionsPage() {
                   <TransactionItem
                     key={t.id}
                     transaction={t}
+                    onClick={handleOpenEdit}
                     onDelete={handleDelete}
                   />
                 ))}
@@ -153,13 +180,21 @@ export default function TransactionsPage() {
       {/* Add Transaction Modal */}
       <Modal
         isOpen={showForm}
-        onClose={() => setShowForm(false)}
-        title="Add Transaction"
+        onClose={() => {
+          setShowForm(false);
+          setEditingTransaction(null);
+        }}
+        title={editingTransaction ? "Edit Transaction" : "Add Transaction"}
       >
         <TransactionForm
+          transaction={editingTransaction}
           categories={categories}
-          onSubmit={handleCreate}
-          isLoading={createMutation.isPending}
+          onSubmit={editingTransaction ? handleUpdate : handleCreate}
+          onCancel={() => {
+            setShowForm(false);
+            setEditingTransaction(null);
+          }}
+          isLoading={createMutation.isPending || updateMutation.isPending}
         />
       </Modal>
     </div>

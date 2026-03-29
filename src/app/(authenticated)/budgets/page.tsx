@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   useBudgets,
   useCreateBudget,
+  useUpdateBudget,
   useDeleteBudget,
 } from "@/hooks/useBudgets";
 import { useCategories } from "@/hooks/useCategories";
@@ -14,16 +15,18 @@ import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { CardSkeleton } from "@/components/ui/Skeleton";
-import { Plus, Trash2 } from "lucide-react";
-import type { CreateBudgetInput } from "@/types";
+import { Plus, Trash2, Pencil } from "lucide-react";
+import type { Budget, CreateBudgetInput } from "@/types";
 
 export default function BudgetsPage() {
   const { data, isLoading } = useBudgets();
   const { data: categoriesData } = useCategories();
   const createMutation = useCreateBudget();
+  const updateMutation = useUpdateBudget();
   const deleteMutation = useDeleteBudget();
 
   const [showForm, setShowForm] = useState(false);
+  const [editingBudgetId, setEditingBudgetId] = useState<string | null>(null);
   const budgets = data?.data ?? [];
   const categories = categoriesData?.data ?? [];
 
@@ -36,9 +39,37 @@ export default function BudgetsPage() {
     end_date: "",
   });
 
-  const handleCreate = (e: React.FormEvent) => {
+  const handleCreateOrUpdate = (e: React.FormEvent) => {
     e.preventDefault();
-    createMutation.mutate(formData, {
+
+    const payload: CreateBudgetInput = {
+      ...formData,
+      category_id: formData.category_id || undefined,
+      end_date: formData.end_date || undefined,
+    };
+
+    if (editingBudgetId) {
+      updateMutation.mutate(
+        { id: editingBudgetId, ...payload },
+        {
+          onSuccess: () => {
+            setShowForm(false);
+            setEditingBudgetId(null);
+            setFormData({
+              category_id: "",
+              name: "",
+              amount_limit: 0,
+              period: "monthly",
+              start_date: new Date().toISOString().slice(0, 10),
+              end_date: "",
+            });
+          },
+        }
+      );
+      return;
+    }
+
+    createMutation.mutate(payload, {
       onSuccess: () => {
         setShowForm(false);
         setFormData({
@@ -51,6 +82,32 @@ export default function BudgetsPage() {
         });
       },
     });
+  };
+
+  const openCreateModal = () => {
+    setEditingBudgetId(null);
+    setFormData({
+      category_id: "",
+      name: "",
+      amount_limit: 0,
+      period: "monthly",
+      start_date: new Date().toISOString().slice(0, 10),
+      end_date: "",
+    });
+    setShowForm(true);
+  };
+
+  const openEditModal = (budget: Budget) => {
+    setEditingBudgetId(budget.id);
+    setFormData({
+      category_id: budget.category_id || "",
+      name: budget.name,
+      amount_limit: Number(budget.amount_limit || 0),
+      period: (budget.period as "weekly" | "monthly" | "yearly") || "monthly",
+      start_date: budget.start_date || new Date().toISOString().slice(0, 10),
+      end_date: budget.end_date || "",
+    });
+    setShowForm(true);
   };
 
   const handleDelete = (id: string) => {
@@ -69,7 +126,7 @@ export default function BudgetsPage() {
             Set spending limits and track your progress
           </p>
         </div>
-        <Button size="sm" onClick={() => setShowForm(true)}>
+        <Button size="sm" onClick={openCreateModal}>
           <Plus size={16} className="mr-1" />
           Create Budget
         </Button>
@@ -88,7 +145,7 @@ export default function BudgetsPage() {
             <p className="text-gray-400 mb-4">
               No budgets yet. Start by creating one!
             </p>
-            <Button size="sm" onClick={() => setShowForm(true)}>
+            <Button size="sm" onClick={openCreateModal}>
               <Plus size={16} className="mr-1" />
               Create your first budget
             </Button>
@@ -108,13 +165,22 @@ export default function BudgetsPage() {
                       {budget.period}
                     </p>
                   </div>
-                  <button
-                    onClick={() => handleDelete(budget.id)}
-                    className="text-gray-300 hover:text-red-500 transition p-1"
-                    title="Delete budget"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => openEditModal(budget)}
+                      className="text-gray-300 hover:text-brand-600 transition p-1"
+                      title="Edit budget"
+                    >
+                      <Pencil size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(budget.id)}
+                      className="text-gray-300 hover:text-red-500 transition p-1"
+                      title="Delete budget"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
                 <BudgetProgress budget={budget} />
               </div>
@@ -126,10 +192,13 @@ export default function BudgetsPage() {
       {/* Create Budget Modal */}
       <Modal
         isOpen={showForm}
-        onClose={() => setShowForm(false)}
-        title="Create Budget"
+        onClose={() => {
+          setShowForm(false);
+          setEditingBudgetId(null);
+        }}
+        title={editingBudgetId ? "Edit Budget" : "Create Budget"}
       >
-        <form onSubmit={handleCreate} className="space-y-4">
+        <form onSubmit={handleCreateOrUpdate} className="space-y-4">
           <Input
             label="Budget Name"
             placeholder="e.g., Groceries Budget"
@@ -203,12 +272,15 @@ export default function BudgetsPage() {
             <Button
               variant="outline"
               type="button"
-              onClick={() => setShowForm(false)}
+              onClick={() => {
+                setShowForm(false);
+                setEditingBudgetId(null);
+              }}
             >
               Cancel
             </Button>
-            <Button type="submit" isLoading={createMutation.isPending}>
-              Create Budget
+            <Button type="submit" isLoading={createMutation.isPending || updateMutation.isPending}>
+              {editingBudgetId ? "Update Budget" : "Create Budget"}
             </Button>
           </div>
         </form>
