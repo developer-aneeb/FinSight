@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireUser } from "@middleware/auth.middleware";
+import { requireStandardUser } from "@middleware/auth.middleware";
 import { validateBody } from "@middleware/validate.middleware";
 import { asyncHandler } from "@utils/asyncHandler";
 import { message, ok } from "@utils/apiResponse";
@@ -22,20 +22,20 @@ const budgetUpdateSchema = z
   });
 
 export const GET = asyncHandler(async (req: NextRequest, context: { params: { id: string } }) => {
-  const user = await requireUser(req);
+  const user = await requireStandardUser(req);
   const budget = await getBudgetById(user.id, context.params.id);
   return withCors(req, ok(budget), "GET,PUT,DELETE,OPTIONS");
 });
 
 export const PUT = asyncHandler(async (req: NextRequest, context: { params: { id: string } }) => {
-  const user = await requireUser(req);
+  const user = await requireStandardUser(req);
   const payload = validateBody(budgetUpdateSchema, await req.json());
   const budget = await updateBudget(user.id, context.params.id, payload);
   return withCors(req, ok(budget), "GET,PUT,DELETE,OPTIONS");
 });
 
 export const DELETE = asyncHandler(async (req: NextRequest, context: { params: { id: string } }) => {
-  const user = await requireUser(req);
+  const user = await requireStandardUser(req);
   await deleteBudget(user.id, context.params.id);
   return withCors(req, message("Budget deleted"), "GET,PUT,DELETE,OPTIONS");
 });

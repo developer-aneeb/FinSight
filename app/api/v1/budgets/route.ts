@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireUser } from "@middleware/auth.middleware";
+import { requireStandardUser } from "@middleware/auth.middleware";
 import { validateBody } from "@middleware/validate.middleware";
 import { asyncHandler } from "@utils/asyncHandler";
 import { created, ok } from "@utils/apiResponse";
@@ -17,13 +17,13 @@ const budgetCreateSchema = z.object({
 });
 
 export const GET = asyncHandler(async (req: NextRequest) => {
-  const user = await requireUser(req);
+  const user = await requireStandardUser(req);
   const budgets = await listBudgets(user.id);
   return withCors(req, ok(budgets), "GET,POST,OPTIONS");
 });
 
 export const POST = asyncHandler(async (req: NextRequest) => {
-  const user = await requireUser(req);
+  const user = await requireStandardUser(req);
   const payload = validateBody(budgetCreateSchema, await req.json());
   const budget = await createBudget(user.id, payload);
   return withCors(req, created(budget), "GET,POST,OPTIONS");
