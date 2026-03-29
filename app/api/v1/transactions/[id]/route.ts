@@ -21,6 +21,7 @@ const transactionUpdateSchema = z
     transaction_date: z.string().optional(),
     is_recurring: z.boolean().optional(),
     recurrence: z.string().trim().min(1).optional(),
+    tags: z.array(z.string().trim().min(1).max(50)).max(20).optional(),
   })
   .refine((payload) => Object.keys(payload).length > 0, {
     message: "At least one field is required",

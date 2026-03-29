@@ -20,6 +20,7 @@ const transactionCreateSchema = z
     transaction_date: z.string().optional(),
     is_recurring: z.boolean().default(false),
     recurrence: z.enum(["none", "daily", "weekly", "monthly", "yearly"]).default("none"),
+    tags: z.array(z.string().trim().min(1).max(50)).max(20).optional(),
   })
   .superRefine((payload, ctx) => {
     if (payload.is_recurring && payload.recurrence === "none") {
@@ -49,6 +50,7 @@ const querySchema = z.object({
   dateTo: z.string().optional(),
   amountMin: z.coerce.number().optional(),
   amountMax: z.coerce.number().optional(),
+  tags: z.string().trim().optional(),
 });
 
 export const GET = asyncHandler(async (req: NextRequest) => {
@@ -63,6 +65,7 @@ export const GET = asyncHandler(async (req: NextRequest) => {
     dateTo: req.nextUrl.searchParams.get("dateTo") || undefined,
     amountMin: req.nextUrl.searchParams.get("amountMin") || undefined,
     amountMax: req.nextUrl.searchParams.get("amountMax") || undefined,
+    tags: req.nextUrl.searchParams.get("tags") || undefined,
   });
 
   const result = await listTransactions(user.id, params);
