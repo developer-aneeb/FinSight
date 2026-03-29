@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireUser } from "@middleware/auth.middleware";
+import { requireStandardUser } from "@middleware/auth.middleware";
 import { validateBody } from "@middleware/validate.middleware";
 import { asyncHandler } from "@utils/asyncHandler";
 import { message, ok } from "@utils/apiResponse";
@@ -27,20 +27,20 @@ const transactionUpdateSchema = z
   });
 
 export const GET = asyncHandler(async (req: NextRequest, context: { params: { id: string } }) => {
-  const user = await requireUser(req);
+  const user = await requireStandardUser(req);
   const transaction = await getTransactionById(user.id, context.params.id);
   return withCors(req, ok(transaction), "GET,PUT,DELETE,OPTIONS");
 });
 
 export const PUT = asyncHandler(async (req: NextRequest, context: { params: { id: string } }) => {
-  const user = await requireUser(req);
+  const user = await requireStandardUser(req);
   const payload = validateBody(transactionUpdateSchema, await req.json());
   const transaction = await updateTransaction(user.id, context.params.id, payload);
   return withCors(req, ok(transaction), "GET,PUT,DELETE,OPTIONS");
 });
 
 export const DELETE = asyncHandler(async (req: NextRequest, context: { params: { id: string } }) => {
-  const user = await requireUser(req);
+  const user = await requireStandardUser(req);
   await deleteTransaction(user.id, context.params.id);
   return withCors(req, message("Transaction deleted"), "GET,PUT,DELETE,OPTIONS");
 });
