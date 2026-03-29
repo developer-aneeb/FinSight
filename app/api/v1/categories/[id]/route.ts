@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireUser } from "@middleware/auth.middleware";
+import { requireStandardUser } from "@middleware/auth.middleware";
 import { validateBody } from "@middleware/validate.middleware";
 import { asyncHandler } from "@utils/asyncHandler";
 import { message, ok } from "@utils/apiResponse";
@@ -19,14 +19,14 @@ const categoryUpdateSchema = z
   });
 
 export const PUT = asyncHandler(async (req: NextRequest, context: { params: { id: string } }) => {
-  const user = await requireUser(req);
+  const user = await requireStandardUser(req);
   const payload = validateBody(categoryUpdateSchema, await req.json());
   const category = await updateCategory(user.id, context.params.id, payload);
   return withCors(req, ok(category), "PUT,DELETE,OPTIONS");
 });
 
 export const DELETE = asyncHandler(async (req: NextRequest, context: { params: { id: string } }) => {
-  const user = await requireUser(req);
+  const user = await requireStandardUser(req);
   await deleteCategory(user.id, context.params.id);
   return withCors(req, message("Category deleted"), "PUT,DELETE,OPTIONS");
 });
