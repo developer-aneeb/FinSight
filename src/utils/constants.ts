@@ -60,13 +60,18 @@ export const ROUTES = {
   LOGIN: "/login",
   SIGNUP: "/signup",
   FORGOT_PASSWORD: "/forgot-password",
+  RESET_PASSWORD: "/reset-password",
   DASHBOARD: "/dashboard",
   TRANSACTIONS: "/transactions",
   TRANSACTION_DETAIL: (id: string) => `/transactions/${id}`,
   BUDGETS: "/budgets",
+  INSIGHTS: "/insights",
   ANALYTICS: "/analytics",
+  NOTIFICATIONS: "/notifications",
   SETTINGS: "/settings",
   ADMIN: "/admin",
+  ADMIN_USERS: "/admin/users",
+  ADMIN_NOTIFICATIONS: "/admin/notifications",
 } as const;
 
 /** API Routes */
