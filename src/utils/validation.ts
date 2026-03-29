@@ -41,7 +41,6 @@ export const resetPasswordSchema = z.object({
 export const profileUpdateSchema = z
   .object({
     full_name: z.string().min(2, "Name must be at least 2 characters").max(100).optional(),
-    avatar_url: z.string().url("Invalid avatar URL").nullable().optional(),
     preferred_currency: z
       .string()
       .length(3, "Currency must be a 3-letter code")
