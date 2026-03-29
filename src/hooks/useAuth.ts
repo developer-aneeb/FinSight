@@ -25,28 +25,56 @@ export function useAuth() {
 
   const loginMutation = useMutation({
     mutationFn: (credentials: LoginCredentials) =>
-      apiPost<{ user: { id: string }; session: { access_token: string } }>(
+      apiPost<{ user: { id: string }; session: { access_token: string }; role?: "user" | "admin" }>(
         "/auth/login",
         credentials
       ),
-    onSuccess: async (data) => {
+    onSuccess: (data) => {
       if (data.data) {
         const token = data.data.session.access_token;
+        const roleFromLogin = data.data.role;
         // First set token so isAuthenticated becomes true
         setUser(null, token);
 
-        // Then try to fetch the full user profile
-        try {
-          const profileRes = await apiGet<Profile>("/auth/profile");
-          if (profileRes.data) {
-            setUser(profileRes.data, token);
-          }
-        } catch {
-          // Profile fetch failed — user is still authenticated with token
+        toast.success("Welcome back!");
+
+        const targetRoute = roleFromLogin === "admin" ? ROUTES.ADMIN : ROUTES.DASHBOARD;
+
+        if (roleFromLogin === "admin") {
+          void queryClient.prefetchQuery({
+            queryKey: ["admin", "dashboard"],
+            queryFn: () => apiGet("/admin/dashboard"),
+          });
+        } else {
+          void queryClient.prefetchQuery({
+            queryKey: ["analytics", "dashboard"],
+            queryFn: () => apiGet("/analytics/dashboard"),
+          });
+          void queryClient.prefetchQuery({
+            queryKey: ["alerts"],
+            queryFn: () => apiGet("/alerts"),
+          });
         }
 
-        toast.success("Welcome back!");
-        router.push(ROUTES.DASHBOARD);
+        router.push(targetRoute);
+
+        // Fetch profile in background so navigation is not blocked
+        void apiGet<Profile>("/auth/profile")
+          .then((profileRes) => {
+            if (profileRes.data) {
+              setUser(profileRes.data, token);
+
+              const profileRoute =
+                profileRes.data.role === "admin" ? ROUTES.ADMIN : ROUTES.DASHBOARD;
+
+              if (profileRoute !== targetRoute) {
+                router.replace(profileRoute);
+              }
+            }
+          })
+          .catch(() => {
+            // Ignore: user remains authenticated with token
+          });
       }
     },
     onError: (error: Error) => {

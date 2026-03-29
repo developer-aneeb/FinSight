@@ -5,11 +5,12 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiGet, apiPost } from "./apiClient";
+import { apiDelete, apiGet, apiPost } from "./apiClient";
 import toast from "react-hot-toast";
-import type { Category, ApiResponse } from "@/types";
+import type { Category, ApiResponse, Tag } from "@/types";
 
 const CATEGORIES_KEY = "categories";
+const TAGS_KEY = "tags";
 
 // --------------- Categories ---------------
 
@@ -44,5 +45,40 @@ export function useSearch(query: string) {
       apiGet(`/search?q=${encodeURIComponent(query)}`),
     enabled: query.length >= 2,
     staleTime: 30_000,
+  });
+}
+
+export function useTags() {
+  return useQuery<ApiResponse<Tag[]>>({
+    queryKey: [TAGS_KEY],
+    queryFn: () => apiGet("/tags"),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useCreateTag() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: { name: string; color?: string }) =>
+      apiPost<Tag>("/tags", input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [TAGS_KEY] });
+      toast.success("Tag created");
+    },
+    onError: (err: Error) => toast.error(err.message || "Failed to create tag"),
+  });
+}
+
+export function useDeleteTag() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => apiDelete(`/tags/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [TAGS_KEY] });
+      toast.success("Tag deleted");
+    },
+    onError: (err: Error) => toast.error(err.message || "Failed to delete tag"),
   });
 }

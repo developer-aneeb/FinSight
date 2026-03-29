@@ -93,8 +93,11 @@ export function apiPut<T>(
 }
 
 /** DELETE request */
-export function apiDelete<T>(endpoint: string): Promise<ApiResponse<T>> {
-  return apiFetch<T>(endpoint, { method: "DELETE" });
+export function apiDelete<T>(endpoint: string, body?: unknown): Promise<ApiResponse<T>> {
+  return apiFetch<T>(endpoint, {
+    method: "DELETE",
+    body: body ? JSON.stringify(body) : undefined,
+  });
 }
 
 /** PATCH request */

@@ -39,6 +39,7 @@ export function useTransactions(page = 1, pageSize = 20) {
   const dateTo = useFilterStore((state) => state.dateTo);
   const amountMin = useFilterStore((state) => state.amountMin);
   const amountMax = useFilterStore((state) => state.amountMax);
+  const tags = useFilterStore((state) => state.tags);
 
   const params = new URLSearchParams();
   params.set("page", String(page));
@@ -50,6 +51,7 @@ export function useTransactions(page = 1, pageSize = 20) {
   if (dateTo) params.set("dateTo", dateTo);
   if (amountMin != null) params.set("amountMin", String(amountMin));
   if (amountMax != null) params.set("amountMax", String(amountMax));
+  if (tags.length > 0) params.set("tags", tags.join(","));
 
   return useQuery<TransactionsListResponse>({
     queryKey: [
@@ -63,6 +65,7 @@ export function useTransactions(page = 1, pageSize = 20) {
       dateTo,
       amountMin,
       amountMax,
+      tags,
     ],
     queryFn: () => apiGet<Transaction[]>(`/transactions?${params.toString()}`) as Promise<TransactionsListResponse>,
   });
