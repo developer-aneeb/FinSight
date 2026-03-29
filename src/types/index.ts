@@ -20,7 +20,7 @@ export interface Profile {
   email: string;
   phone?: string | null;
   address?: Record<string, any>;
-  avatar_url: string | null;
+  
   preferred_currency: string;
   role: UserRole;
   created_at: string;
@@ -231,7 +231,9 @@ export interface SignupCredentials extends LoginCredentials {
 
 export interface UpdateProfileInput {
   full_name?: string;
-  avatar_url?: string | null;
+  phone?: string | null;
+  address?: Record<string, any>;
+  
   preferred_currency?: string;
 }
 
