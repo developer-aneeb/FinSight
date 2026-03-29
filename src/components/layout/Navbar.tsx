@@ -18,7 +18,6 @@ import {
   BarChart3,
   BellRing,
   ShieldCheck,
-  Settings,
   Bell,
   LogOut,
   Menu,
