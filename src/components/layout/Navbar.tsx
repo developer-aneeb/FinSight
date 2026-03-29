@@ -24,6 +24,7 @@ import {
   Menu,
   X,
   Sparkles,
+  UserCircle,
 } from "lucide-react";
 
 const baseNavItems = [
@@ -33,13 +34,14 @@ const baseNavItems = [
   { label: "Analytics", href: ROUTES.ANALYTICS, icon: BarChart3 },
   { label: "Insights", href: ROUTES.INSIGHTS, icon: Sparkles },
   { label: "Notifications", href: ROUTES.NOTIFICATIONS, icon: BellRing },
-  { label: "Settings", href: ROUTES.SETTINGS, icon: Settings },
+  { label: "Profile", href: ROUTES.PROFILE, icon: UserCircle },
 ];
 
 const adminNavItems = [
   { label: "Admin", href: ROUTES.ADMIN, icon: ShieldCheck },
   { label: "Users", href: ROUTES.ADMIN_USERS, icon: Users },
   { label: "Notifications", href: ROUTES.ADMIN_NOTIFICATIONS, icon: BellRing },
+  { label: "Profile", href: ROUTES.PROFILE, icon: UserCircle },
 ];
 
 export function Navbar() {
