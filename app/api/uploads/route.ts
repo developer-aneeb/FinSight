@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireUser } from "@middleware/auth.middleware";
+import { requireStandardUser } from "@middleware/auth.middleware";
 import { validateUploadFile } from "@modules/uploads/image.validator";
 import { uploadFile, deleteFile } from "@modules/uploads/upload.service";
 import { asyncHandler } from "@utils/asyncHandler";
@@ -7,7 +7,7 @@ import { ok, message } from "@utils/apiResponse";
 import { HttpError } from "@utils/error";
 
 export const POST = asyncHandler(async (req: NextRequest) => {
-  const user = await requireUser(req);
+  const user = await requireStandardUser(req);
   const formData = await req.formData();
   const file = formData.get("file");
 
@@ -21,7 +21,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
 });
 
 export const DELETE = asyncHandler(async (req: NextRequest) => {
-  await requireUser(req);
+  await requireStandardUser(req);
 
   const url = new URL(req.url);
   const filePath = url.searchParams.get("path") || "";
