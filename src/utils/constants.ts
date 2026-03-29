@@ -69,6 +69,7 @@ export const ROUTES = {
   ANALYTICS: "/analytics",
   NOTIFICATIONS: "/notifications",
   SETTINGS: "/settings",
+  PROFILE: "/profile",
   ADMIN: "/admin",
   ADMIN_USERS: "/admin/users",
   ADMIN_NOTIFICATIONS: "/admin/notifications",
