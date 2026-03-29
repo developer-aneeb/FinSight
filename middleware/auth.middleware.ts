@@ -27,7 +27,7 @@ export async function requireUser(req: NextRequest): Promise<AuthUser> {
 
   let { data: userRow, error: userError } = await supabase
     .from("users")
-    .select("role_id")
+    .select("role:roles(name)")
     .eq("id", authData.user.id)
     .single();
 
@@ -53,7 +53,7 @@ export async function requireUser(req: NextRequest): Promise<AuthUser> {
 
     const retry = await supabase
       .from("users")
-      .select("role_id")
+      .select("role:roles(name)")
       .eq("id", authData.user.id)
       .single();
 
@@ -61,11 +61,14 @@ export async function requireUser(req: NextRequest): Promise<AuthUser> {
     userError = retry.error;
   }
 
-  if (!userError && userRow?.role_id) {
-    const { data: roleRow } = await supabase.from("roles").select("name").eq("id", userRow.role_id).single();
-    if (roleRow?.name) {
-      role = roleRow.name;
-    }
+  const roleRelation = userRow?.role as unknown;
+  const roleRecord = Array.isArray(roleRelation)
+    ? (roleRelation[0] as { name?: string } | undefined)
+    : (roleRelation as { name?: string } | undefined);
+  const roleName = roleRecord?.name;
+
+  if (!userError && roleName) {
+    role = roleName;
   }
 
   return {
@@ -80,6 +83,16 @@ export async function requireAdminUser(req: NextRequest): Promise<AuthUser> {
 
   if (user.role !== "admin") {
     throw new HttpError(403, "Admin access required");
+  }
+
+  return user;
+}
+
+export async function requireStandardUser(req: NextRequest): Promise<AuthUser> {
+  const user = await requireUser(req);
+
+  if (user.role === "admin") {
+    throw new HttpError(403, "User access required");
   }
 
   return user;
