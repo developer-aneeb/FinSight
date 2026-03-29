@@ -30,10 +30,16 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   await requireAdminUser(req);
 
   const url = new URL(req.url);
-  const page = Number(url.searchParams.get("page") || 1);
-  const pageSize = Number(url.searchParams.get("pageSize") || 20);
+  const pageRaw = Number(url.searchParams.get("page") || 1);
+  const pageSizeRaw = Number(url.searchParams.get("pageSize") || 20);
+  const search = (url.searchParams.get("search") || "").trim() || undefined;
 
-  const result = await listUsers(page, pageSize);
+  const page = Number.isFinite(pageRaw) && pageRaw > 0 ? Math.floor(pageRaw) : 1;
+  const pageSize = Number.isFinite(pageSizeRaw) && pageSizeRaw > 0
+    ? Math.min(Math.floor(pageSizeRaw), 100)
+    : 20;
+
+  const result = await listUsers(page, pageSize, search);
   return ok(result);
 });
 
