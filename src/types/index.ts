@@ -105,6 +105,13 @@ export interface Insight {
   generated_at: string;
 }
 
+export interface InsightGenerationData {
+  status: "reused_previous" | "regenerated_new";
+  message: string;
+  insights: Insight[];
+  inputSignature: string;
+}
+
 // ─── API Request/Response Types ─────────────────────────────
 
 export interface ApiResponse<T = unknown> {
@@ -177,6 +184,11 @@ export interface DashboardSummary {
   totalExpenses: number;
   netBalance: number;
   transactionCount: number;
+  highLevelTrends: {
+    week: { income: number; expenses: number; net: number };
+    month: { income: number; expenses: number; net: number };
+    year: { income: number; expenses: number; net: number };
+  };
   topCategories: Array<{
     category_name: string;
     category_icon: string;
