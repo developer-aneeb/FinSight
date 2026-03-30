@@ -290,6 +290,21 @@ create table if not exists public.insights (
 create index if not exists insights_user_generated_idx on public.insights(user_id, generated_at desc);
 create index if not exists insights_user_dismissed_idx on public.insights(user_id, is_dismissed);
 
+create table if not exists public.pipeline_runs (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users(id) on delete cascade,
+  status text not null check (status in ('success', 'failed')),
+  mode text not null check (mode in ('dry-run', 'commit')),
+  lookback_days int not null check (lookback_days >= 1),
+  recommendations_count int not null default 0 check (recommendations_count >= 0),
+  persisted_insights int not null default 0 check (persisted_insights >= 0),
+  error_message text,
+  started_at timestamptz not null default now(),
+  finished_at timestamptz not null default now()
+);
+
+create index if not exists pipeline_runs_user_started_idx on public.pipeline_runs(user_id, started_at desc);
+
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
