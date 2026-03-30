@@ -4,16 +4,16 @@
  */
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import {
   ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
   Tooltip,
-  Legend,
 } from "recharts";
 import Card, { CardHeader } from "@/components/ui/Card";
+import { formatCurrency } from "@/utils/formatCurrency";
 
 interface CategoryBreakdownProps {
   data: Array<{
@@ -26,6 +26,18 @@ interface CategoryBreakdownProps {
 }
 
 export function CategoryBreakdown({ data }: CategoryBreakdownProps) {
+  const chartData = useMemo(
+    () =>
+      (data || []).map((d) => ({
+        name: d.category_name,
+        icon: d.category_icon,
+        value: d.total,
+        percentage: d.percentage,
+        color: d.category_color,
+      })),
+    [data]
+  );
+
   if (!data || data.length === 0) {
     return (
       <Card>
@@ -37,12 +49,6 @@ export function CategoryBreakdown({ data }: CategoryBreakdownProps) {
     );
   }
 
-  const chartData = data.map((d) => ({
-    name: `${d.category_icon} ${d.category_name}`,
-    value: d.total,
-    color: d.category_color,
-  }));
-
   return (
     <Card>
       <CardHeader title="Spending by Category" subtitle="Current month breakdown" />
@@ -52,33 +58,46 @@ export function CategoryBreakdown({ data }: CategoryBreakdownProps) {
             <Pie
               data={chartData}
               cx="50%"
-              cy="50%"
-              innerRadius={60}
-              outerRadius={100}
+              cy="45%"
+              innerRadius={58}
+              outerRadius={90}
               paddingAngle={2}
               dataKey="value"
+              strokeWidth={1}
             >
               {chartData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.color} />
               ))}
             </Pie>
             <Tooltip
-              formatter={(value: number) => [`PKR ${value.toLocaleString()}`, ""]}
+              formatter={(value: number) => [formatCurrency(value), "Amount"]}
+              labelFormatter={(_, payload) => {
+                const point = payload?.[0]?.payload as { icon?: string; name?: string } | undefined;
+                return `${point?.icon || ""} ${point?.name || "Category"}`.trim();
+              }}
               contentStyle={{
                 borderRadius: "8px",
                 border: "1px solid #E5E7EB",
               }}
             />
-            <Legend
-              layout="vertical"
-              verticalAlign="middle"
-              align="right"
-              iconType="circle"
-              iconSize={8}
-              wrapperStyle={{ fontSize: "12px" }}
-            />
           </PieChart>
         </ResponsiveContainer>
+      </div>
+      <div className="px-4 pb-4 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+        {chartData.map((entry) => (
+          <div key={entry.name} className="flex items-center justify-between text-sm">
+            <div className="min-w-0 flex items-center gap-2">
+              <span
+                className="h-2.5 w-2.5 rounded-full shrink-0"
+                style={{ backgroundColor: entry.color }}
+              />
+              <span className="truncate text-gray-700">
+                {entry.icon} {entry.name}
+              </span>
+            </div>
+            <span className="text-gray-500 ml-2 shrink-0">{entry.percentage.toFixed(0)}%</span>
+          </div>
+        ))}
       </div>
     </Card>
   );
