@@ -3,31 +3,23 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useAlerts, useDismissAlert } from "@/hooks/useAlerts";
-import { useCreateTag, useDeleteTag, useTags } from "@/hooks/useCategories";
 import { AlertItem } from "@/components/alerts/AlertItem";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { profileUpdateSchema } from "@/utils/validation";
-import { User, Bell, Shield, LogOut, Tags } from "lucide-react";
+import { User, Bell, Shield, LogOut } from "lucide-react";
 import type { Alert } from "@/types";
 
 export default function SettingsPage() {
   const { user, logout, updateProfile, isUpdateProfileLoading, requestPasswordReset, isForgotPasswordLoading } = useAuth();
   const { data: alertsData, isLoading: alertsLoading } = useAlerts();
   const dismissMutation = useDismissAlert();
-  const { data: tagsData, isLoading: tagsLoading } = useTags();
-  const createTagMutation = useCreateTag();
-  const deleteTagMutation = useDeleteTag();
   const [fullName, setFullName] = useState("");
   const [preferredCurrency, setPreferredCurrency] = useState("PKR");
-  const [newTagName, setNewTagName] = useState("");
-  const [newTagColor, setNewTagColor] = useState("#3B82F6");
   const [profileError, setProfileError] = useState("");
 
   const alerts: Alert[] = alertsData?.data ?? [];
-  const tags = tagsData?.data ?? [];
 
   useEffect(() => {
     if (!user) {
@@ -62,25 +54,6 @@ export default function SettingsPage() {
     }
 
     requestPasswordReset({ email: user.email });
-  };
-
-  const handleCreateTag = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    const normalized = newTagName.trim();
-    if (!normalized) {
-      return;
-    }
-
-    createTagMutation.mutate(
-      { name: normalized, color: newTagColor },
-      {
-        onSuccess: () => {
-          setNewTagName("");
-          setNewTagColor("#3B82F6");
-        },
-      }
-    );
   };
 
   return (
@@ -160,53 +133,6 @@ export default function SettingsPage() {
           >
             Send Password Reset Email
           </Button>
-        </div>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex items-center gap-3">
-          <Tags size={20} className="text-brand-600" />
-          <h2 className="font-semibold text-gray-900">Tag Management</h2>
-        </CardHeader>
-        <div className="p-4 pt-0 space-y-4">
-          <form onSubmit={handleCreateTag} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
-            <Input
-              label="Tag Name"
-              value={newTagName}
-              onChange={(event) => setNewTagName(event.target.value)}
-              placeholder="e.g. subscriptions"
-            />
-            <Input
-              label="Color"
-              value={newTagColor}
-              onChange={(event) => setNewTagColor(event.target.value)}
-              placeholder="#3B82F6"
-            />
-            <Button type="submit" isLoading={createTagMutation.isPending}>
-              Add Tag
-            </Button>
-          </form>
-
-          {tagsLoading ? (
-            <p className="text-gray-400 text-sm">Loading tags…</p>
-          ) : tags.length === 0 ? (
-            <p className="text-gray-400 text-sm">No tags yet.</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {tags.map((tag) => (
-                <div key={tag.id} className="flex items-center gap-2 rounded-lg border border-gray-200 px-2.5 py-1.5">
-                  <Badge variant="info">{tag.name}</Badge>
-                  <button
-                    type="button"
-                    className="text-xs text-red-600 hover:text-red-700"
-                    onClick={() => deleteTagMutation.mutate(tag.id)}
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </Card>
 
