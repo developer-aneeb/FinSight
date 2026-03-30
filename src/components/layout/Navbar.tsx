@@ -15,6 +15,7 @@ import {
   Users,
   ArrowLeftRight,
   PiggyBank,
+  FolderOpen,
   BarChart3,
   BellRing,
   ShieldCheck,
@@ -27,9 +28,10 @@ import {
 } from "lucide-react";
 
 const baseNavItems = [
-  { label: "Dashboard", href: ROUTES.DASHBOARD, icon: LayoutDashboard },
+  { label: "Home", href: ROUTES.DASHBOARD, icon: LayoutDashboard },
   { label: "Transactions", href: ROUTES.TRANSACTIONS, icon: ArrowLeftRight },
   { label: "Budgets", href: ROUTES.BUDGETS, icon: PiggyBank },
+  { label: "Categories", href: ROUTES.CATEGORIES, icon: FolderOpen },
   { label: "Analytics", href: ROUTES.ANALYTICS, icon: BarChart3 },
   { label: "Insights", href: ROUTES.INSIGHTS, icon: Sparkles },
   { label: "Notifications", href: ROUTES.NOTIFICATIONS, icon: BellRing },
