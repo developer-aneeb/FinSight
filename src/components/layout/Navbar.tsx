@@ -9,6 +9,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/utils/cn";
 import { useAuthStore } from "@/store/authStore";
 import { useAuth } from "@/hooks/useAuth";
+import { useNavigationPrefetch } from "@/hooks/useNavigationPrefetch";
 import { ROUTES } from "@/utils/constants";
 import {
   LayoutDashboard,
@@ -49,6 +50,7 @@ export function Navbar() {
   const pathname = usePathname();
   const { user } = useAuthStore();
   const { logout } = useAuth();
+  const { prefetchRoute } = useNavigationPrefetch();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const navItems = user?.role === "admin" ? adminNavItems : baseNavItems;
@@ -75,6 +77,8 @@ export function Navbar() {
               <Link
                 key={item.href}
                 href={item.href}
+                onMouseEnter={() => prefetchRoute(item.href)}
+                onFocus={() => prefetchRoute(item.href)}
                 className={cn(
                   "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                   isActive
@@ -95,6 +99,8 @@ export function Navbar() {
           {/* Alerts bell */}
           <Link
             href={user?.role === "admin" ? ROUTES.ADMIN_NOTIFICATIONS : ROUTES.NOTIFICATIONS}
+            onMouseEnter={() => prefetchRoute(user?.role === "admin" ? ROUTES.ADMIN_NOTIFICATIONS : ROUTES.NOTIFICATIONS)}
+            onFocus={() => prefetchRoute(user?.role === "admin" ? ROUTES.ADMIN_NOTIFICATIONS : ROUTES.NOTIFICATIONS)}
             className="relative rounded-lg p-2 text-gray-500 hover:bg-gray-100"
             aria-label="View alerts"
           >
@@ -137,6 +143,7 @@ export function Navbar() {
               <Link
                 key={item.href}
                 href={item.href}
+                onTouchStart={() => prefetchRoute(item.href)}
                 onClick={() => setIsMobileOpen(false)}
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium",
