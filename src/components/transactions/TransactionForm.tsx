@@ -43,6 +43,27 @@ export function TransactionForm({
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const filteredCategories = categories.filter((c) => {
+    const incomeCategories = ["Salary", "Freelance", "Investments", "Other Income"];
+    if (type === "income") return incomeCategories.includes(c.name) || !c.is_system;
+    return !incomeCategories.includes(c.name) || !c.is_system;
+  });
+
+  const categoryMap = new Map(categories.map((category) => [category.id, category]));
+  const categoryOptions = filteredCategories.map((category) => {
+    const parent = category.parent_id ? categoryMap.get(category.parent_id) : null;
+    const label = parent
+      ? `${parent.icon} ${parent.name} / ${category.icon} ${category.name}`
+      : `${category.icon} ${category.name}`;
+
+    return {
+      value: category.id,
+      label,
+    };
+  });
+
+  const quickAmounts = type === "income" ? [5000, 10000, 25000] : [500, 1000, 5000];
+
   useEffect(() => {
     setType(transaction?.type || "expense");
     setAmount(transaction?.amount?.toString() || "");
@@ -56,24 +77,38 @@ export function TransactionForm({
     setErrors({});
   }, [transaction]);
 
-  const filteredCategories = categories.filter((c) => {
-    // Income categories: Salary, Freelance, Investments, Other Income
-    const incomeCategories = ["Salary", "Freelance", "Investments", "Other Income"];
-    if (type === "income") return incomeCategories.includes(c.name) || !c.is_system;
-    return !incomeCategories.includes(c.name) || !c.is_system;
-  });
-
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
+
     if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
       newErrors.amount = "Please enter a valid positive amount";
     }
+
+    if (Number(amount) > 99999999999.99) {
+      newErrors.amount = "Amount is too large";
+    }
+
     if (!description.trim()) {
       newErrors.description = "Description is required";
     }
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      newErrors.transaction_date = "Please select a valid date";
+    }
+
     if (isRecurring && recurrence === "none") {
       newErrors.recurrence = "Please select a recurrence frequency";
     }
+
+    const tagList = tags
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+
+    if (tagList.length > 20) {
+      newErrors.tags = "Maximum 20 tags are allowed";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -88,10 +123,14 @@ export function TransactionForm({
       category_id: categoryId || undefined,
       description: description.trim(),
       notes: notes.trim(),
-      tags: tags
-        .split(",")
-        .map((tag) => tag.trim())
-        .filter(Boolean),
+      tags: Array.from(
+        new Set(
+          tags
+            .split(",")
+            .map((tag) => tag.trim())
+            .filter(Boolean)
+        )
+      ),
       transaction_date: date,
       is_recurring: isRecurring,
       recurrence: isRecurring ? recurrence as CreateTransactionInput["recurrence"] : "none",
@@ -126,17 +165,41 @@ export function TransactionForm({
         </button>
       </div>
 
-      <Input
-        label="Amount (PKR)"
-        type="number"
-        placeholder="0.00"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-        error={errors.amount}
-        min="0"
-        step="0.01"
-        required
-      />
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div>
+          <Input
+            label="Amount (PKR)"
+            type="number"
+            placeholder="0.00"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            error={errors.amount}
+            min="0"
+            step="0.01"
+            required
+          />
+          <div className="mt-2 flex flex-wrap gap-2">
+            {quickAmounts.map((value) => (
+              <button
+                key={value}
+                type="button"
+                className="rounded-full border border-gray-200 px-2.5 py-1 text-xs text-gray-600 hover:border-brand-200 hover:bg-brand-50"
+                onClick={() => setAmount(String(value))}
+              >
+                PKR {value.toLocaleString()}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <Input
+          label="Date"
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          error={errors.transaction_date}
+        />
+      </div>
 
       <Input
         label="Description"
@@ -153,17 +216,7 @@ export function TransactionForm({
         value={categoryId}
         onChange={(e) => setCategoryId(e.target.value)}
         placeholder="Select a category"
-        options={filteredCategories.map((c) => ({
-          value: c.id,
-          label: `${c.icon} ${c.name}`,
-        }))}
-      />
-
-      <Input
-        label="Date"
-        type="date"
-        value={date}
-        onChange={(e) => setDate(e.target.value)}
+        options={categoryOptions}
       />
 
       <Input
@@ -179,6 +232,7 @@ export function TransactionForm({
         placeholder="e.g., groceries, essentials"
         value={tags}
         onChange={(e) => setTags(e.target.value)}
+        error={errors.tags}
       />
 
       {/* Recurring */}

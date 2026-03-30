@@ -58,7 +58,30 @@ export function TransactionItem({ transaction, onClick, onDelete }: TransactionI
           {transaction.category && (
             <Badge variant="default">{transaction.category.name}</Badge>
           )}
+          {transaction.is_recurring && transaction.recurrence !== "none" && (
+            <Badge variant="warning">Recurring: {transaction.recurrence}</Badge>
+          )}
         </div>
+        {!!transaction.notes && (
+          <p className="mt-1 truncate text-xs text-gray-500">{transaction.notes}</p>
+        )}
+        {transaction.tags && transaction.tags.length > 0 && (
+          <div className="mt-1 flex flex-wrap gap-1">
+            {transaction.tags.slice(0, 3).map((tag) => (
+              <span
+                key={tag.id}
+                className="rounded-full border border-gray-200 px-2 py-0.5 text-[10px] text-gray-600"
+              >
+                #{tag.name}
+              </span>
+            ))}
+            {transaction.tags.length > 3 && (
+              <span className="rounded-full border border-gray-200 px-2 py-0.5 text-[10px] text-gray-500">
+                +{transaction.tags.length - 3}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Amount */}

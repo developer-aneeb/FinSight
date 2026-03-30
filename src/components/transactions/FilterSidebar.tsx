@@ -26,6 +26,7 @@ export function FilterSidebar({
   onClose,
 }: FilterSidebarProps) {
   const {
+    searchQuery,
     selectedType,
     selectedCategoryId,
     dateFrom,
@@ -33,6 +34,7 @@ export function FilterSidebar({
     amountMin,
     amountMax,
     tags,
+    setSearchQuery,
     setSelectedType,
     setSelectedCategory,
     setDateRange,
@@ -40,6 +42,12 @@ export function FilterSidebar({
     setTags,
     resetAll,
   } = useFilterStore();
+
+  const dateRangeError = Boolean(dateFrom && dateTo && dateFrom > dateTo);
+  const amountRangeError =
+    typeof amountMin === "number" &&
+    typeof amountMax === "number" &&
+    amountMin > amountMax;
 
   const handleReset = () => {
     resetAll();
@@ -68,6 +76,13 @@ export function FilterSidebar({
       </div>
 
       <div className="space-y-4">
+        <Input
+          label="Search"
+          placeholder="Search description or notes"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+
         {/* Transaction Type */}
         <Select
           label="Type"
@@ -109,6 +124,9 @@ export function FilterSidebar({
               aria-label="To date"
             />
           </div>
+          {dateRangeError && (
+            <p className="mt-1 text-xs text-red-600">End date must be after start date.</p>
+          )}
         </div>
 
         {/* Amount Range */}
@@ -142,6 +160,9 @@ export function FilterSidebar({
               aria-label="Maximum amount"
             />
           </div>
+          {amountRangeError && (
+            <p className="mt-1 text-xs text-red-600">Maximum amount must be greater than minimum amount.</p>
+          )}
         </div>
 
         {/* Tags */}
