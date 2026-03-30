@@ -7,11 +7,25 @@ import type { ApiResponse } from "@/types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
+export class ApiError extends Error {
+  status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+    this.name = "ApiError";
+  }
+}
+
 /** Fetch wrapper that auto-attaches auth token */
 async function apiFetch<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
+  if (!BASE_URL) {
+    throw new ApiError(500, "NEXT_PUBLIC_API_URL is not configured");
+  }
+
   const token = useAuthStore.getState().accessToken;
 
   const headers: Record<string, string> = {
@@ -29,7 +43,12 @@ async function apiFetch<T>(
     credentials: "include",
   });
 
-  const data = await response.json();
+  let data: any = {};
+  try {
+    data = await response.json();
+  } catch {
+    data = {};
+  }
 
   if (!response.ok) {
     const details = Array.isArray(data?.details)
@@ -47,7 +66,13 @@ async function apiFetch<T>(
           .join(", ")
       : "";
 
-    throw new Error(details || data.error || data.message || "Request failed");
+    const message = details || data.error || data.message || "Request failed";
+
+    if (response.status === 401) {
+      useAuthStore.getState().logout();
+    }
+
+    throw new ApiError(response.status, message);
   }
 
   return data;

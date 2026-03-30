@@ -20,3 +20,4 @@ export { useDashboardSummary, useAnalyticsData } from "./useAnalytics";
 export { useAlerts, useDismissAlert, useMarkAlertRead } from "./useAlerts";
 export { useCategories, useCreateCategory, useSearch } from "./useCategories";
 export { useInsights, useGenerateInsights, useDismissInsight } from "./useInsights";
+export { useRunAnalysisPipeline, useAnalysisPipelineHistory } from "./useAnalysisPipeline";

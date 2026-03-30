@@ -4,9 +4,11 @@
  */
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost, apiPut, apiDelete } from "./apiClient";
 import { useFilterStore } from "@/store/filterStore";
+import { shallow } from "zustand/shallow";
 import toast from "react-hot-toast";
 import type {
   Transaction,
@@ -32,26 +34,58 @@ type TransactionsListResponse = ApiResponse<Transaction[]> & {
 // --------------- List ---------------
 
 export function useTransactions(page = 1, pageSize = 20) {
-  const searchQuery = useFilterStore((state) => state.searchQuery);
-  const selectedType = useFilterStore((state) => state.selectedType);
-  const selectedCategoryId = useFilterStore((state) => state.selectedCategoryId);
-  const dateFrom = useFilterStore((state) => state.dateFrom);
-  const dateTo = useFilterStore((state) => state.dateTo);
-  const amountMin = useFilterStore((state) => state.amountMin);
-  const amountMax = useFilterStore((state) => state.amountMax);
-  const tags = useFilterStore((state) => state.tags);
+  const {
+    searchQuery,
+    selectedType,
+    selectedCategoryId,
+    dateFrom,
+    dateTo,
+    amountMin,
+    amountMax,
+    tags,
+  } = useFilterStore(
+    (state) => ({
+      searchQuery: state.searchQuery,
+      selectedType: state.selectedType,
+      selectedCategoryId: state.selectedCategoryId,
+      dateFrom: state.dateFrom,
+      dateTo: state.dateTo,
+      amountMin: state.amountMin,
+      amountMax: state.amountMax,
+      tags: state.tags,
+    }),
+    shallow
+  );
 
-  const params = new URLSearchParams();
-  params.set("page", String(page));
-  params.set("pageSize", String(pageSize));
-  if (searchQuery) params.set("search", searchQuery);
-  if (selectedType && selectedType !== "all") params.set("type", selectedType);
-  if (selectedCategoryId) params.set("categoryId", selectedCategoryId);
-  if (dateFrom) params.set("dateFrom", dateFrom);
-  if (dateTo) params.set("dateTo", dateTo);
-  if (amountMin != null) params.set("amountMin", String(amountMin));
-  if (amountMax != null) params.set("amountMax", String(amountMax));
-  if (tags.length > 0) params.set("tags", tags.join(","));
+  const tagsKey = useMemo(() => [...tags].sort().join(","), [tags]);
+
+  const queryString = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set("page", String(page));
+    params.set("pageSize", String(pageSize));
+    if (searchQuery) params.set("search", searchQuery);
+    if (selectedType && selectedType !== "all") params.set("type", selectedType);
+    if (selectedCategoryId) params.set("categoryId", selectedCategoryId);
+    if (dateFrom) params.set("dateFrom", dateFrom);
+    if (dateTo) params.set("dateTo", dateTo);
+    if (amountMin != null) params.set("amountMin", String(amountMin));
+    if (amountMax != null) params.set("amountMax", String(amountMax));
+    if (tags.length > 0) params.set("tags", tagsKey);
+
+    return params.toString();
+  }, [
+    page,
+    pageSize,
+    searchQuery,
+    selectedType,
+    selectedCategoryId,
+    dateFrom,
+    dateTo,
+    amountMin,
+    amountMax,
+    tags,
+    tagsKey,
+  ]);
 
   return useQuery<TransactionsListResponse>({
     queryKey: [
@@ -65,9 +99,12 @@ export function useTransactions(page = 1, pageSize = 20) {
       dateTo,
       amountMin,
       amountMax,
-      tags,
+      tagsKey,
     ],
-    queryFn: () => apiGet<Transaction[]>(`/transactions?${params.toString()}`) as Promise<TransactionsListResponse>,
+    queryFn: () => apiGet<Transaction[]>(`/transactions?${queryString}`) as Promise<TransactionsListResponse>,
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+    gcTime: 300_000,
   });
 }
 
@@ -92,6 +129,8 @@ export function useCreateTransaction() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [TRANSACTIONS_KEY] });
       qc.invalidateQueries({ queryKey: ["analytics"] });
+      qc.invalidateQueries({ queryKey: ["alerts"] });
+      qc.invalidateQueries({ queryKey: ["insights"] });
       toast.success("Transaction added");
     },
     onError: (err: Error) => toast.error(err.message || "Failed to create"),
@@ -112,6 +151,8 @@ export function useUpdateTransaction() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [TRANSACTIONS_KEY] });
       qc.invalidateQueries({ queryKey: ["analytics"] });
+      qc.invalidateQueries({ queryKey: ["alerts"] });
+      qc.invalidateQueries({ queryKey: ["insights"] });
       toast.success("Transaction updated");
     },
     onError: (err: Error) => toast.error(err.message || "Failed to update"),
@@ -128,6 +169,8 @@ export function useDeleteTransaction() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [TRANSACTIONS_KEY] });
       qc.invalidateQueries({ queryKey: ["analytics"] });
+      qc.invalidateQueries({ queryKey: ["alerts"] });
+      qc.invalidateQueries({ queryKey: ["insights"] });
       toast.success("Transaction deleted");
     },
     onError: (err: Error) => toast.error(err.message || "Failed to delete"),

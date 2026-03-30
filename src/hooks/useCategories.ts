@@ -5,7 +5,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiDelete, apiGet, apiPost } from "./apiClient";
+import { apiDelete, apiGet, apiPost, apiPut } from "./apiClient";
 import toast from "react-hot-toast";
 import type { Category, ApiResponse, Tag } from "@/types";
 
@@ -26,17 +26,42 @@ export function useCreateCategory() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: { name: string; icon?: string; color?: string }) =>
+    mutationFn: (input: { name: string; icon?: string; color?: string; parent_id?: string | null }) =>     
       apiPost<Category>("/categories", input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [CATEGORIES_KEY] });
       toast.success("Category created");
     },
-    onError: (err: Error) => toast.error(err.message || "Failed to create"),
+    onError: (err: Error) => toast.error(err.message || "Failed to create"),    
   });
 }
 
-// --------------- Search ---------------
+export function useUpdateCategory() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, ...input }: { id: string; name?: string; icon?: string; color?: string; parent_id?: string | null }) =>
+      apiPut<Category>(`/categories/${id}`, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [CATEGORIES_KEY] });
+      toast.success("Category updated");
+    },
+    onError: (err: Error) => toast.error(err.message || "Failed to update category"),
+  });
+}
+
+export function useDeleteCategory() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => apiDelete(`/categories/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [CATEGORIES_KEY] });
+      toast.success("Category deleted");
+    },
+    onError: (err: Error) => toast.error(err.message || "Failed to delete category"),
+});
+}
 
 export function useSearch(query: string) {
   return useQuery({
@@ -67,6 +92,20 @@ export function useCreateTag() {
       toast.success("Tag created");
     },
     onError: (err: Error) => toast.error(err.message || "Failed to create tag"),
+  });
+}
+
+export function useUpdateTag() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, ...input }: { id: string; name?: string; color?: string }) =>
+      apiPut<Tag>(`/tags/${id}`, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [TAGS_KEY] });
+      toast.success("Tag updated");
+    },
+    onError: (err: Error) => toast.error(err.message || "Failed to update tag"),
   });
 }
 
