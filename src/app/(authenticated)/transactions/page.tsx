@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { TransactionListSkeleton } from "@/components/ui/Skeleton";
 import { Card } from "@/components/ui/Card";
-import { Plus, SlidersHorizontal } from "lucide-react";
+import { Plus, SlidersHorizontal, TrendingUp, TrendingDown, Wallet } from "lucide-react";
+import { formatCurrency } from "@/utils/formatCurrency";
 import type { CreateTransactionInput, Transaction } from "@/types";
 
 export default function TransactionsPage() {
@@ -28,6 +29,13 @@ export default function TransactionsPage() {
   const transactions = data?.data ?? [];
   const pagination = data?.pagination ?? null;
   const categories = categoriesData?.data ?? [];
+  const incomeTotal = transactions
+    .filter((entry) => entry.type === "income")
+    .reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+  const expenseTotal = transactions
+    .filter((entry) => entry.type === "expense")
+    .reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+  const netTotal = incomeTotal - expenseTotal;
 
   const handleCreate = (input: CreateTransactionInput) => {
     createMutation.mutate(input, {
@@ -67,7 +75,6 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Transactions</h1>
@@ -93,6 +100,42 @@ export default function TransactionsPage() {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <Card className="border-l-4 border-l-brand-500">
+          <p className="text-xs text-gray-500">Visible Transactions</p>
+          <p className="mt-1 text-2xl font-bold text-gray-900">{transactions.length}</p>
+        </Card>
+        <Card className="border-l-4 border-l-finance-income">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-500">Income</p>
+              <p className="mt-1 text-xl font-bold text-finance-income">{formatCurrency(incomeTotal)}</p>
+            </div>
+            <TrendingUp className="h-5 w-5 text-finance-income" />
+          </div>
+        </Card>
+        <Card className="border-l-4 border-l-finance-expense">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-500">Expenses</p>
+              <p className="mt-1 text-xl font-bold text-finance-expense">{formatCurrency(expenseTotal)}</p>
+            </div>
+            <TrendingDown className="h-5 w-5 text-finance-expense" />
+          </div>
+        </Card>
+        <Card className="border-l-4 border-l-finance-savings">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-500">Net</p>
+              <p className={`mt-1 text-xl font-bold ${netTotal >= 0 ? "text-finance-savings" : "text-finance-expense"}`}>
+                {formatCurrency(netTotal)}
+              </p>
+            </div>
+            <Wallet className="h-5 w-5 text-brand-600" />
+          </div>
+        </Card>
+      </div>
+
       <div className="flex gap-6">
         {/* Filter Sidebar */}
         {showFilters && (
@@ -113,7 +156,8 @@ export default function TransactionsPage() {
               </div>
             ) : transactions.length === 0 ? (
               <div className="p-12 text-center">
-                <p className="text-gray-400 mb-4">No transactions found</p>
+                <p className="text-gray-500 mb-2 font-medium">No transactions found</p>
+                <p className="text-sm text-gray-400 mb-4">Try changing filters or add your first transaction.</p>
                 <Button size="sm" onClick={handleOpenCreate}>
                   <Plus size={16} className="mr-1" />
                   Add your first transaction
