@@ -10,17 +10,28 @@ import {
 } from "@modules/transactions/transactions.service";
 import { z } from "zod";
 
+const transactionTypeSchema = z.enum(["income", "expense"]);
+const recurrenceSchema = z.enum(["none", "daily", "weekly", "monthly", "yearly"]);
+const dateStringSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format");
+
+const normalizedTagsSchema = z
+  .array(z.string().trim().min(1).max(50))
+  .max(20)
+  .transform((tags) => Array.from(new Set(tags.map((tag) => tag.trim()).filter(Boolean))));
+
 const transactionCreateSchema = z
   .object({
-    type: z.string().trim().min(1),
-    amount: z.number().positive(),
+    type: transactionTypeSchema,
+    amount: z.coerce.number().positive().max(99999999999.99),
     category_id: z.string().uuid().optional(),
-    description: z.string().trim().max(500).optional(),
+    description: z.string().trim().min(1, "Description is required").max(500),
     notes: z.string().trim().max(2000).optional(),
-    transaction_date: z.string().optional(),
+    transaction_date: dateStringSchema.optional(),
     is_recurring: z.boolean().default(false),
-    recurrence: z.enum(["none", "daily", "weekly", "monthly", "yearly"]).default("none"),
-    tags: z.array(z.string().trim().min(1).max(50)).max(20).optional(),
+    recurrence: recurrenceSchema.default("none"),
+    tags: normalizedTagsSchema.optional(),
   })
   .superRefine((payload, ctx) => {
     if (payload.is_recurring && payload.recurrence === "none") {
@@ -43,14 +54,34 @@ const transactionCreateSchema = z
 const querySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
-  search: z.string().trim().optional(),
-  type: z.string().trim().min(1).optional(),
+  search: z.string().trim().max(120).optional(),
+  type: transactionTypeSchema.optional(),
   categoryId: z.string().uuid().optional(),
-  dateFrom: z.string().optional(),
-  dateTo: z.string().optional(),
-  amountMin: z.coerce.number().optional(),
-  amountMax: z.coerce.number().optional(),
-  tags: z.string().trim().optional(),
+  dateFrom: dateStringSchema.optional(),
+  dateTo: dateStringSchema.optional(),
+  amountMin: z.coerce.number().min(0).optional(),
+  amountMax: z.coerce.number().min(0).optional(),
+  tags: z.string().trim().max(300).optional(),
+}).superRefine((payload, ctx) => {
+  if (payload.dateFrom && payload.dateTo && payload.dateFrom > payload.dateTo) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["dateTo"],
+      message: "End date must be greater than or equal to start date",
+    });
+  }
+
+  if (
+    typeof payload.amountMin === "number" &&
+    typeof payload.amountMax === "number" &&
+    payload.amountMin > payload.amountMax
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["amountMax"],
+      message: "Maximum amount must be greater than or equal to minimum amount",
+    });
+  }
 });
 
 export const GET = asyncHandler(async (req: NextRequest) => {
