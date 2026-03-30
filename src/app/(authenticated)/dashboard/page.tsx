@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useDashboardSummary } from "@/hooks/useAnalytics";
 import { useAlerts } from "@/hooks/useAlerts";
@@ -23,19 +24,37 @@ import {
   Target,
   ArrowRight,
   Bell,
+  Sparkles,
+  CalendarRange,
+  RefreshCw,
 } from "lucide-react";
 
 export default function DashboardPage() {
-  const { data, isLoading, error } = useDashboardSummary();
+  const { data, isLoading, error, refetch, isRefetching } = useDashboardSummary();
   const { data: alertsData } = useAlerts();
   const { data: insightsData } = useInsights(3);
   const generateInsights = useGenerateInsights();
   const dismissInsight = useDismissInsight();
+  const [trendRange, setTrendRange] = useState<"week" | "month" | "year">("month");
 
   const summary = data?.data;
   const alerts: Alert[] = alertsData?.data ?? [];
   const insights = insightsData?.data ?? [];
   const unreadAlerts = alerts.filter((a: Alert) => a.status === "unread");
+  const trendCards = summary?.highLevelTrends;
+
+  const trendChartData = useMemo(() => {
+    const trend = summary?.monthlyTrend ?? [];
+    if (trendRange === "year") {
+      return trend.slice(-12);
+    }
+
+    if (trendRange === "month") {
+      return trend.slice(-6);
+    }
+
+    return trend.slice(-3);
+  }, [summary?.monthlyTrend, trendRange]);
 
   if (isLoading) return <DashboardSkeleton />;
 
@@ -51,33 +70,54 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="rounded-2xl border border-brand-100 bg-gradient-to-r from-brand-50 via-white to-white p-5 sm:p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Your financial overview at a glance
+            <h1 className="text-2xl font-bold text-gray-900">Financial Dashboard</h1>
+            <p className="text-gray-600 text-sm mt-1">
+              Real-time snapshot of your cashflow, balance, and spending patterns.
           </p>
         </div>
-        {unreadAlerts.length > 0 && (
-          <Link
-            href={ROUTES.NOTIFICATIONS}
-            className="flex items-center gap-2 bg-amber-50 text-amber-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-amber-100 transition"
-          >
-            <Bell size={16} />
-            {unreadAlerts.length} new alert{unreadAlerts.length > 1 ? "s" : ""}
-          </Link>
-        )}
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              leftIcon={<RefreshCw size={14} />}
+              isLoading={isRefetching}
+              onClick={() => void refetch()}
+            >
+              Refresh
+            </Button>
+            <Button
+              size="sm"
+              variant="primary"
+              leftIcon={<Sparkles size={14} />}
+              isLoading={generateInsights.isPending}
+              onClick={() => generateInsights.mutate()}
+            >
+              Generate Insights
+            </Button>
+            {unreadAlerts.length > 0 && (
+              <Link
+                href={ROUTES.NOTIFICATIONS}
+                className="inline-flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700 hover:bg-amber-100"
+              >
+                <Bell size={16} />
+                {unreadAlerts.length} new alert{unreadAlerts.length > 1 ? "s" : ""}
+              </Link>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Income"
           value={formatCurrency(summary.totalIncome)}
           icon={<TrendingUp size={20} />}
           trend={summary.totalIncome > 0 ? "up" : undefined}
-          trendValue="This month"
+          trendValue="Current month"
           className="border-l-4 border-l-finance-income"
         />
         <StatCard
@@ -85,7 +125,7 @@ export default function DashboardPage() {
           value={formatCurrency(summary.totalExpenses)}
           icon={<TrendingDown size={20} />}
           trend={summary.totalExpenses > 0 ? "down" : undefined}
-          trendValue="This month"
+          trendValue="Current month"
           className="border-l-4 border-l-finance-expense"
         />
         <StatCard
@@ -107,19 +147,61 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Charts Row */}
+      <Card>
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="section-header mb-0">High-Level Trends</h2>
+            <p className="text-sm text-gray-500 mt-1">Compare weekly, monthly, and yearly performance.</p>
+          </div>
+          <div className="inline-flex items-center gap-1 rounded-lg border border-gray-200 p-1">
+            {["week", "month", "year"].map((range) => (
+              <button
+                key={range}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize transition ${
+                  trendRange === range
+                    ? "bg-brand-600 text-white"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+                onClick={() => setTrendRange(range as "week" | "month" | "year")}
+              >
+                {range}
+              </button>
+            ))}
+          </div>
+        </CardHeader>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="rounded-lg border border-gray-200 p-4">
+            <p className="text-xs text-gray-500 flex items-center gap-1"><CalendarRange size={12} /> Income</p>
+            <p className="mt-1 text-lg font-semibold text-finance-income">
+              {formatCurrency(trendCards?.[trendRange].income ?? 0)}
+            </p>
+          </div>
+          <div className="rounded-lg border border-gray-200 p-4">
+            <p className="text-xs text-gray-500">Expenses</p>
+            <p className="mt-1 text-lg font-semibold text-finance-expense">
+              {formatCurrency(trendCards?.[trendRange].expenses ?? 0)}
+            </p>
+          </div>
+          <div className="rounded-lg border border-gray-200 p-4">
+            <p className="text-xs text-gray-500">Net</p>
+            <p className={`mt-1 text-lg font-semibold ${(trendCards?.[trendRange].net ?? 0) >= 0 ? "text-finance-savings" : "text-finance-expense"}`}>
+              {formatCurrency(trendCards?.[trendRange].net ?? 0)}
+            </p>
+          </div>
+        </div>
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <MonthlyTrendChart data={summary.monthlyTrend ?? []} />
+          <MonthlyTrendChart data={trendChartData} />
         </div>
         <div>
           <CategoryBreakdown data={summary.topCategories ?? []} />
         </div>
       </div>
 
-      {/* Bottom Row — Budgets & Recent Transactions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Active Budgets */}
         <Card>
           <CardHeader className="flex items-center justify-between">
             <h2 className="section-header mb-0">Budget Progress</h2>
@@ -143,7 +225,6 @@ export default function DashboardPage() {
           </div>
         </Card>
 
-        {/* Recent Transactions */}
         <Card>
           <CardHeader className="flex items-center justify-between">
             <h2 className="section-header mb-0">Recent Transactions</h2>
@@ -169,7 +250,6 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Alerts */}
       {unreadAlerts.length > 0 && (
         <Card>
           <CardHeader>
@@ -186,14 +266,7 @@ export default function DashboardPage() {
       <Card>
         <CardHeader className="flex items-center justify-between">
           <h2 className="section-header mb-0">AI Insights</h2>
-          <Button
-            size="sm"
-            variant="outline"
-            isLoading={generateInsights.isPending}
-            onClick={() => generateInsights.mutate()}
-          >
-            Refresh Insights
-          </Button>
+          <span className="text-xs text-gray-500">Personalized recommendations</span>
         </CardHeader>
         <div className="p-4 pt-0 space-y-3">
           {insights.length === 0 ? (
