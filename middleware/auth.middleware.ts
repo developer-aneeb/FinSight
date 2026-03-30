@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { getAdminClient } from "@config/supabaseAdminClient";
 import { HttpError } from "@utils/error";
+import { getBearerToken } from "@modules/auth/tokens";
 
 export interface AuthUser {
   id: string;
@@ -9,13 +10,12 @@ export interface AuthUser {
 }
 
 export async function requireUser(req: NextRequest): Promise<AuthUser> {
-  const authHeader = req.headers.get("authorization");
+  const token = getBearerToken(req);
 
-  if (!authHeader?.startsWith("Bearer ")) {
+  if (!token) {
     throw new HttpError(401, "Authentication required");
   }
 
-  const token = authHeader.replace("Bearer ", "");
   const supabase = getAdminClient();
   const { data: authData, error: authError } = await supabase.auth.getUser(token);
 
@@ -32,18 +32,34 @@ export async function requireUser(req: NextRequest): Promise<AuthUser> {
     .single();
 
   if (userError?.code === "PGRST116") {
+    const { data: defaultRole } = await supabase
+      .from("roles")
+      .select("id")
+      .eq("name", "user")
+      .maybeSingle();
+
     const fullName =
       authData.user.user_metadata && typeof authData.user.user_metadata === "object"
         ? String((authData.user.user_metadata as { full_name?: unknown }).full_name || "")
         : "";
 
+    const insertPayload: {
+      id: string;
+      email: string;
+      full_name: string;
+      role_id?: number;
+    } = {
+      id: authData.user.id,
+      email: authData.user.email || "",
+      full_name: fullName,
+    };
+
+    if (typeof defaultRole?.id === "number") {
+      insertPayload.role_id = defaultRole.id;
+    }
+
     const { error: upsertError } = await supabase.from("users").upsert(
-      {
-        id: authData.user.id,
-        email: authData.user.email || "",
-        full_name: fullName,
-        role_id: 1,
-      },
+      insertPayload,
       { onConflict: "id" }
     );
 

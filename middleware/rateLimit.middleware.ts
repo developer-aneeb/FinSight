@@ -5,10 +5,35 @@ import { HttpError } from "@utils/error";
 type Entry = { count: number; resetAt: number };
 
 const rateLimitStore = new Map<string, Entry>();
+let requestCounter = 0;
+
+function getClientKey(req: NextRequest): string {
+  const forwarded = req.headers.get("x-forwarded-for");
+  if (forwarded) {
+    return forwarded.split(",")[0]?.trim() || "unknown";
+  }
+
+  return req.ip || "unknown";
+}
+
+function cleanupExpiredEntries(now: number): void {
+  requestCounter += 1;
+  if (requestCounter % 200 !== 0) {
+    return;
+  }
+
+  for (const [key, entry] of rateLimitStore.entries()) {
+    if (now > entry.resetAt) {
+      rateLimitStore.delete(key);
+    }
+  }
+}
 
 export function enforceRateLimit(req: NextRequest): void {
-  const key = req.headers.get("x-forwarded-for") || req.ip || "unknown";
+  const key = getClientKey(req);
   const now = Date.now();
+
+  cleanupExpiredEntries(now);
 
   const current = rateLimitStore.get(key);
   if (!current || now > current.resetAt) {
