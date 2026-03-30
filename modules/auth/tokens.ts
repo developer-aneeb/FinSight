@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export function getBearerToken(req: NextRequest): string {
-  return req.headers.get("authorization")?.replace("Bearer ", "") || "";
+  const authHeader = req.headers.get("authorization") || "";
+  if (authHeader.startsWith("Bearer ")) {
+    return authHeader.slice("Bearer ".length).trim();
+  }
+
+  return req.cookies.get("sb-access-token")?.value || "";
 }
 
 export function setAccessTokenCookie(response: NextResponse, accessToken: string): void {

@@ -1,4 +1,4 @@
-import { getClient } from "@config/supabaseClient";
+import { getClient, getUserClient } from "@config/supabaseClient";
 import { getAdminClient } from "@config/supabaseAdminClient";
 import type { LoginCredentials, SignupCredentials, Profile } from "@customTypes/index";
 import logger from "@utils/logger";
@@ -8,6 +8,46 @@ interface SupabaseLikeError {
   message?: string;
   status?: number;
   code?: string;
+}
+
+async function ensureUserProfileRow(userId: string, email: string, fullName = ""): Promise<void> {
+  const supabase = getAdminClient();
+
+  const { data: existing, error: existingError } = await supabase
+    .from("users")
+    .select("id")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (!existingError && existing?.id) {
+    return;
+  }
+
+  const { data: defaultRole } = await supabase
+    .from("roles")
+    .select("id")
+    .eq("name", "user")
+    .maybeSingle();
+
+  const payload: {
+    id: string;
+    email: string;
+    full_name: string;
+    role_id?: number;
+  } = {
+    id: userId,
+    email,
+    full_name: fullName,
+  };
+
+  if (typeof defaultRole?.id === "number") {
+    payload.role_id = defaultRole.id;
+  }
+
+  const { error: upsertError } = await supabase.from("users").upsert(payload, { onConflict: "id" });
+  if (upsertError && upsertError.code !== "42P01") {
+    throw new HttpError(500, "Unable to initialize user profile");
+  }
 }
 
 async function getRoleByUserId(userId: string): Promise<Profile["role"]> {
@@ -73,7 +113,20 @@ export async function signIn(credentials: LoginCredentials) {
   if (error) {
     throw toHttpError(error, "Unable to sign in at the moment");
   }
-  return data;
+
+  if (data.user?.id) {
+    const fullName =
+      data.user.user_metadata && typeof data.user.user_metadata === "object"
+        ? String((data.user.user_metadata as { full_name?: unknown }).full_name || "")
+        : "";
+    await ensureUserProfileRow(data.user.id, data.user.email || credentials.email, fullName);
+  }
+
+  const role = data.user?.id ? await getRoleByUserId(data.user.id) : "user";
+  return {
+    ...data,
+    role,
+  };
 }
 
 export async function signOut(accessToken: string) {
@@ -89,6 +142,15 @@ export async function resetPassword(email: string, redirectTo: string) {
   const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
   if (error) {
     throw toHttpError(error, "Unable to send password reset email");
+  }
+}
+
+export async function updatePassword(accessToken: string, password: string) {
+  const supabase = getUserClient(accessToken);
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    throw toHttpError(error, "Unable to update password");
   }
 }
 
@@ -123,9 +185,13 @@ export async function confirmSignup(tokenHash: string) {
 
 export async function getProfile(userId: string): Promise<Profile | null> {
   const supabase = getAdminClient();
+
+  const { data: authUser } = await supabase.auth.admin.getUserById(userId);
+  await ensureUserProfileRow(userId, authUser?.user?.email || "", "");
+
   const { data, error } = await supabase
     .from("users")
-    .select("id, email, full_name, avatar_url, preferred_currency, created_at, updated_at, role_id")
+    .select("id, email, full_name, phone, address, preferred_currency, created_at, updated_at, role_id")
     .eq("id", userId)
     .single();
 
@@ -139,7 +205,8 @@ export async function getProfile(userId: string): Promise<Profile | null> {
     id: data.id,
     email: data.email,
     full_name: data.full_name,
-    avatar_url: data.avatar_url,
+    phone: data.phone,
+    address: data.address,
     preferred_currency: data.preferred_currency,
     role,
     created_at: data.created_at,
@@ -149,14 +216,14 @@ export async function getProfile(userId: string): Promise<Profile | null> {
 
 export async function updateProfile(
   userId: string,
-  updates: Partial<Pick<Profile, "full_name" | "avatar_url" | "preferred_currency">>
+  updates: Partial<Pick<Profile, "full_name" | "phone" | "address" | "preferred_currency">>
 ): Promise<Profile> {
   const supabase = getAdminClient();
   const { data, error } = await supabase
     .from("users")
     .update(updates)
     .eq("id", userId)
-    .select("id, email, full_name, avatar_url, preferred_currency, created_at, updated_at, role_id")
+    .select("id, email, full_name, phone, address, preferred_currency, created_at, updated_at, role_id")
     .single();
 
   if (error || !data) {
@@ -169,7 +236,8 @@ export async function updateProfile(
     id: data.id,
     email: data.email,
     full_name: data.full_name,
-    avatar_url: data.avatar_url,
+    phone: data.phone,
+    address: data.address,
     preferred_currency: data.preferred_currency,
     role,
     created_at: data.created_at,

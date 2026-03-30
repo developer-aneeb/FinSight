@@ -42,10 +42,15 @@ export const forgotPasswordSchema = z.object({
   redirectTo: z.string().url().optional(),
 });
 
+export const updatePasswordSchema = z.object({
+  password: strongPassword,
+});
+
 export const profileUpdateSchema = z
   .object({
     full_name: fullName.optional(),
-    avatar_url: z.string().trim().url().nullable().optional(),
+    phone: z.string().trim().nullable().optional(),
+    address: z.record(z.any()).optional(),
     preferred_currency: z
       .string()
       .trim()
