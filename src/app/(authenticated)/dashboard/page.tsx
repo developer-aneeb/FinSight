@@ -1,13 +1,12 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useDashboardSummary } from "@/hooks/useAnalytics";
 import { useAlerts } from "@/hooks/useAlerts";
 import { useDismissInsight, useGenerateInsights, useInsights } from "@/hooks/useInsights";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { MonthlyTrendChart } from "@/components/dashboard/MonthlyTrendChart";
-import { CategoryBreakdown } from "@/components/dashboard/CategoryBreakdown";
 import { BudgetProgress } from "@/components/budgets/BudgetProgress";
 import { TransactionItem } from "@/components/transactions/TransactionItem";
 import { AlertItem } from "@/components/alerts/AlertItem";
@@ -28,6 +27,16 @@ import {
   CalendarRange,
   RefreshCw,
 } from "lucide-react";
+
+const MonthlyTrendChart = dynamic(
+  () => import("@/components/dashboard/MonthlyTrendChart").then((mod) => mod.MonthlyTrendChart),
+  { ssr: false, loading: () => <CardSkeleton className="lg:col-span-2 h-72" /> }
+);
+
+const CategoryBreakdown = dynamic(
+  () => import("@/components/dashboard/CategoryBreakdown").then((mod) => mod.CategoryBreakdown),
+  { ssr: false, loading: () => <CardSkeleton className="h-72" /> }
+);
 
 export default function DashboardPage() {
   const { data, isLoading, error, refetch, isRefetching } = useDashboardSummary();
