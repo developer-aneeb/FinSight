@@ -91,3 +91,68 @@ export async function deleteBudget(userId: string, id: string) {
     throw new HttpError(404, "Budget not found");
   }
 }
+
+export async function refreshBudgetSpentAndAlerts(userId: string): Promise<void> {
+  const supabase = getAdminClient();
+
+  const rpcResult = await supabase.rpc("refresh_budget_spent_and_alerts", { p_user_id: userId });
+  if (!rpcResult.error) {
+    return;
+  }
+
+  const missingFunction =
+    rpcResult.error.code === "PGRST202" ||
+    rpcResult.error.code === "42883";
+
+  if (!missingFunction) {
+    throw new HttpError(500, "Failed to refresh budget spent");
+  }
+
+  const { data: budgets, error: budgetsError } = await supabase
+    .from("budgets")
+    .select("id, user_id, category_id, start_date, end_date")
+    .eq("user_id", userId);
+
+  if (budgetsError) {
+    throw new HttpError(500, "Failed to recalculate budgets");
+  }
+
+  try {
+    await Promise.all(
+      (budgets || []).map(async (budget) => {
+        let txQuery = supabase
+          .from("transactions")
+          .select("amount")
+          .eq("user_id", userId)
+          .eq("type", "expense")
+          .gte("transaction_date", budget.start_date);
+
+        if (budget.end_date) {
+          txQuery = txQuery.lte("transaction_date", budget.end_date);
+        }
+
+        if (budget.category_id) {
+          txQuery = txQuery.eq("category_id", budget.category_id);
+        }
+
+        const { data: txRows, error: txError } = await txQuery;
+        if (txError) {
+          throw txError;
+        }
+
+        const spent = (txRows || []).reduce((sum, row) => sum + Number(row.amount || 0), 0);
+
+        const { error: updateError } = await supabase
+          .from("budgets")
+          .update({ spent })
+          .eq("id", budget.id);
+
+        if (updateError) {
+          throw updateError;
+        }
+      })
+    );
+  } catch {
+    throw new HttpError(500, "Failed to recalculate budgets");
+  }
+}
