@@ -1,8 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+import Link from "next/link";
 import { format } from "date-fns";
 import {
+  BellRing,
+  CircleCheck,
   Sparkles,
   TrendingDown,
   AlertTriangle,
@@ -73,12 +76,24 @@ const getInsightBadge = (type: string) => {
 export default function InsightsPage() {
   const { data: response, isLoading, isError, refetch } = useInsights(20);
   const insights = response?.data || [];
+  const [generationNotice, setGenerationNotice] = useState<{
+    status: "reused_previous" | "regenerated_new";
+    message: string;
+  } | null>(null);
 
   const { mutate: generateInsights, isPending: isGenerating } = useGenerateInsights();
   const { mutate: dismissInsight } = useDismissInsight();
 
   const handleGenerate = () => {
-    generateInsights();
+    generateInsights(undefined, {
+      onSuccess: (result) => {
+        const status = result?.data?.status;
+        const message = result?.data?.message;
+        if (status && message) {
+          setGenerationNotice({ status, message });
+        }
+      },
+    });
   };
 
   const handleDismiss = (id: string, e: React.MouseEvent) => {
@@ -129,16 +144,57 @@ export default function InsightsPage() {
           </p>
         </div>
         <div className="relative z-10">
-          <Button
-            onClick={handleGenerate}
-            disabled={isGenerating || isLoading}
-            className="flex w-full items-center gap-2 sm:w-auto shadow-sm"
-          >
-            <RefreshCw className={`h-4 w-4 ${isGenerating ? "animate-spin" : ""}`} />
-            {isGenerating ? "Analyzing..." : "Generate Insights"}
-          </Button>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button
+              onClick={handleGenerate}
+              disabled={isGenerating || isLoading}
+              className="flex w-full items-center gap-2 sm:w-auto shadow-sm"
+            >
+              <RefreshCw className={`h-4 w-4 ${isGenerating ? "animate-spin" : ""}`} />
+              {isGenerating ? "Analyzing..." : "Generate Insights"}
+            </Button>
+            <Link href="/insights/pipeline" className="inline-flex">
+              <Button variant="outline" className="w-full sm:w-auto">Pipeline Runner</Button>
+            </Link>
+          </div>
         </div>
       </div>
+
+      {generationNotice && (
+        <Card
+          className={`p-4 border ${
+            generationNotice.status === "reused_previous"
+              ? "border-amber-200 bg-amber-50"
+              : "border-emerald-200 bg-emerald-50"
+          }`}
+        >
+          <div className="flex items-start gap-3">
+            {generationNotice.status === "reused_previous" ? (
+              <BellRing className="mt-0.5 h-5 w-5 text-amber-600" />
+            ) : (
+              <CircleCheck className="mt-0.5 h-5 w-5 text-emerald-600" />
+            )}
+            <div>
+              <p
+                className={`text-sm font-semibold ${
+                  generationNotice.status === "reused_previous" ? "text-amber-800" : "text-emerald-800"
+                }`}
+              >
+                {generationNotice.status === "reused_previous"
+                  ? "Insights reused"
+                  : "Insights recalculated"}
+              </p>
+              <p
+                className={`mt-0.5 text-sm ${
+                  generationNotice.status === "reused_previous" ? "text-amber-700" : "text-emerald-700"
+                }`}
+              >
+                {generationNotice.message}
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {isLoading ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
