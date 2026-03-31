@@ -13,12 +13,11 @@ export async function runGlobalAnalysisPipeline() {
   logger.info("Starting Global AI Analysis Pipeline...");
 
   // 1. Fetch active users (for example purposes, fetching a subset or all, ideally paginated in production)
-  let hasMore = true;
   let offset = 0;
   const limit = 100;
   let totalProcessed = 0;
 
-  while (hasMore) {
+  while (true) {
     const { data: users, error } = await supabase
       .from("users")
       .select("id")
@@ -30,7 +29,6 @@ export async function runGlobalAnalysisPipeline() {
     }
 
     if (!users || users.length === 0) {
-      hasMore = false;
       break;
     }
 
