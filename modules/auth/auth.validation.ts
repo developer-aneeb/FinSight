@@ -50,7 +50,7 @@ export const profileUpdateSchema = z
   .object({
     full_name: fullName.optional(),
     phone: z.string().trim().nullable().optional(),
-    address: z.record(z.any()).optional(),
+    address: z.record(z.string(), z.any()).optional(),
     preferred_currency: z
       .string()
       .trim()
