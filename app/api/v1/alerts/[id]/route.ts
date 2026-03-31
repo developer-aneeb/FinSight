@@ -12,10 +12,11 @@ const updateAlertSchema = z.object({
   status: z.enum(["read", "dismissed"]),
 });
 
-export const PATCH = asyncHandler(async (req: NextRequest, context: { params: { id: string } }) => {
+export const PATCH = asyncHandler(async (req: NextRequest, context: { params: Promise<{ id: string }> }) => {
   const user = await requireStandardUser(req);
   const payload = validateBody(updateAlertSchema, await req.json());
-  const updated = await updateAlertStatus(user.id, context.params.id, payload.status);
+  const { id } = await context.params;
+  const updated = await updateAlertStatus(user.id, id, payload.status);
 
   if (!updated) {
     throw new HttpError(404, "Alert not found");
