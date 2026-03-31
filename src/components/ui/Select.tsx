@@ -46,8 +46,8 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
               {placeholder}
             </option>
           )}
-          {options.map((opt) => (
-            <option key={opt.value} value={opt.value}>
+          {options.map((opt, idx) => (
+            <option key={`${opt.value}-${idx}`} value={opt.value}>
               {opt.label}
             </option>
           ))}
