@@ -11,15 +11,16 @@ const updateAlertSchema = z.object({
   status: z.enum(["unread", "read", "dismissed"]),
 });
 
-export const PATCH = asyncHandler(async (req: NextRequest, { params }: { params: { id: string } }) => {
+export const PATCH = asyncHandler(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   await requireAdminUser(req);
   const { status } = validateBody(updateAlertSchema, await req.json());
+  const { id } = await params;
 
   const supabase = getAdminClient();
   const { data, error } = await supabase
     .from("alerts")
     .update({ status })
-    .eq("id", params.id)
+    .eq("id", id)
     .select("*, user:users(email, full_name)")
     .single();
 
