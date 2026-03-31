@@ -73,17 +73,29 @@ export default function AnalyticsPage() {
     : undefined;
 
   const monthOptions = useMemo(
-    () =>
-      Array.from({ length: 6 }).map((_, i) => {
-        const d = new Date();
-        d.setMonth(d.getMonth() - i);
+    () => {
+      const now = new Date();
+      // Normalize to first day of month to avoid end-of-month rollover duplicates.
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const seen = new Set<string>();
+      const options: Array<{ value: string; label: string }> = [];
+
+      for (let i = 0; i < 6; i += 1) {
+        const d = new Date(monthStart.getFullYear(), monthStart.getMonth() - i, 1);
         const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        if (seen.has(value)) continue;
+        seen.add(value);
+
         const label = d.toLocaleDateString("en-PK", {
           year: "numeric",
           month: "long",
         });
-        return { value, label };
-      }),
+
+        options.push({ value, label });
+      }
+
+      return options;
+    },
     []
   );
 
