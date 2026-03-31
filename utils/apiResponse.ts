@@ -26,7 +26,7 @@ export function handleRouteError(error: unknown): NextResponse {
   }
 
   if (error instanceof ZodError) {
-    const messages = error.errors.map((entry) => `${entry.path.join(".")}: ${entry.message}`);
+    const messages = error.issues.map((entry) => `${entry.path.join(".")}: ${entry.message}`);
     return fail("Validation failed", 400, messages);
   }
 
