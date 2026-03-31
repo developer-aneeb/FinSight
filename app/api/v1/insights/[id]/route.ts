@@ -5,9 +5,10 @@ import { message } from "@utils/apiResponse";
 import { optionsResponse, withCors } from "@utils/cors";
 import { dismissInsight } from "@modules/insights/insights.service";
 
-export const DELETE = asyncHandler(async (req: NextRequest, context: { params: { id: string } }) => {
+export const DELETE = asyncHandler(async (req: NextRequest, context: { params: Promise<{ id: string }> }) => {
   const user = await requireStandardUser(req);
-  await dismissInsight(user.id, context.params.id);
+  const { id } = await context.params;
+  await dismissInsight(user.id, id);
   return withCors(req, message("Insight dismissed"), "DELETE,OPTIONS");
 });
 
