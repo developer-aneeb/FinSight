@@ -18,16 +18,18 @@ const categoryUpdateSchema = z
     message: "At least one field is required",
   });
 
-export const PUT = asyncHandler(async (req: NextRequest, context: { params: { id: string } }) => {
+export const PUT = asyncHandler(async (req: NextRequest, context: { params: Promise<{ id: string }> }) => {
   const user = await requireStandardUser(req);
   const payload = validateBody(categoryUpdateSchema, await req.json());
-  const category = await updateCategory(user.id, context.params.id, payload);
+  const { id } = await context.params;
+  const category = await updateCategory(user.id, id, payload);
   return withCors(req, ok(category), "PUT,DELETE,OPTIONS");
 });
 
-export const DELETE = asyncHandler(async (req: NextRequest, context: { params: { id: string } }) => {
+export const DELETE = asyncHandler(async (req: NextRequest, context: { params: Promise<{ id: string }> }) => {
   const user = await requireStandardUser(req);
-  await deleteCategory(user.id, context.params.id);
+  const { id } = await context.params;
+  await deleteCategory(user.id, id);
   return withCors(req, message("Category deleted"), "PUT,DELETE,OPTIONS");
 });
 
