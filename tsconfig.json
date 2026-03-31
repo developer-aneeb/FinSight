@@ -13,7 +13,7 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "noEmit": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "moduleResolution": "bundler",
     "incremental": true,
     "allowJs": false,
@@ -23,31 +23,30 @@
         "name": "next"
       }
     ],
-    "baseUrl": ".",
     "paths": {
       "@config/*": [
-        "config/*"
+        "./config/*"
       ],
       "@modules/*": [
-        "modules/*"
+        "./modules/*"
       ],
       "@middleware/*": [
-        "middleware/*"
+        "./middleware/*"
       ],
       "@utils/*": [
-        "utils/*"
+        "./utils/*"
       ],
       "@rbac/*": [
-        "rbac/*"
+        "./rbac/*"
       ],
       "@customTypes/*": [
-        "types/*"
+        "./types/*"
       ]
     }
   },
   "include": [
     "next-env.d.ts",
-    "middleware.ts",
+    "proxy.ts",
     "app/**/*.ts",
     "app/**/*.tsx",
     "config/**/*.ts",
@@ -56,7 +55,8 @@
     "rbac/**/*.ts",
     "types/**/*.ts",
     "utils/**/*.ts",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
