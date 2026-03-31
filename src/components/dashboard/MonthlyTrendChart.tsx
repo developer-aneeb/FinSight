@@ -40,8 +40,8 @@ export function MonthlyTrendChart({ data }: MonthlyTrendChartProps) {
   return (
     <Card>
       <CardHeader title="Monthly Trends" subtitle="Income vs Expenses (last 6 months)" />
-      <div className="h-72" role="img" aria-label="Monthly income and expenses bar chart">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="h-72 min-w-0" role="img" aria-label="Monthly income and expenses bar chart">
+        <ResponsiveContainer width="100%" height={288} minWidth={280} minHeight={220}>
           <BarChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
             <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#9CA3AF" />
@@ -52,7 +52,10 @@ export function MonthlyTrendChart({ data }: MonthlyTrendChartProps) {
                 border: "1px solid #E5E7EB",
                 boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
               }}
-              formatter={(value: number) => [`PKR ${value.toLocaleString()}`, ""]}
+              formatter={(value) => {
+                const numericValue = typeof value === "number" ? value : Number(value ?? 0);
+                return [`PKR ${numericValue.toLocaleString()}`, ""];
+              }}
             />
             <Legend />
             <Bar

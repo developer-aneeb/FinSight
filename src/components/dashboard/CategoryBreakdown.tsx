@@ -52,8 +52,8 @@ export function CategoryBreakdown({ data }: CategoryBreakdownProps) {
   return (
     <Card>
       <CardHeader title="Spending by Category" subtitle="Current month breakdown" />
-      <div className="h-72" role="img" aria-label="Category spending pie chart">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="h-72 min-w-0" role="img" aria-label="Category spending pie chart">
+        <ResponsiveContainer width="100%" height={288} minWidth={260} minHeight={220}>
           <PieChart>
             <Pie
               data={chartData}
@@ -70,7 +70,10 @@ export function CategoryBreakdown({ data }: CategoryBreakdownProps) {
               ))}
             </Pie>
             <Tooltip
-              formatter={(value: number) => [formatCurrency(value), "Amount"]}
+              formatter={(value) => {
+                const numericValue = typeof value === "number" ? value : Number(value ?? 0);
+                return [formatCurrency(numericValue), "Amount"];
+              }}
               labelFormatter={(_, payload) => {
                 const point = payload?.[0]?.payload as { icon?: string; name?: string } | undefined;
                 return `${point?.icon || ""} ${point?.name || "Category"}`.trim();
