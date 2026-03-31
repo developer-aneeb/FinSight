@@ -55,22 +55,25 @@ const transactionUpdateSchema = z
     message: "At least one field is required",
   });
 
-export const GET = asyncHandler(async (req: NextRequest, context: { params: { id: string } }) => {
+export const GET = asyncHandler(async (req: NextRequest, context: { params: Promise<{ id: string }> }) => {
   const user = await requireStandardUser(req);
-  const transaction = await getTransactionById(user.id, context.params.id);
+  const { id } = await context.params;
+  const transaction = await getTransactionById(user.id, id);
   return withCors(req, ok(transaction), "GET,PUT,DELETE,OPTIONS");
 });
 
-export const PUT = asyncHandler(async (req: NextRequest, context: { params: { id: string } }) => {
+export const PUT = asyncHandler(async (req: NextRequest, context: { params: Promise<{ id: string }> }) => {
   const user = await requireStandardUser(req);
   const payload = validateBody(transactionUpdateSchema, await req.json());
-  const transaction = await updateTransaction(user.id, context.params.id, payload);
+  const { id } = await context.params;
+  const transaction = await updateTransaction(user.id, id, payload);
   return withCors(req, ok(transaction), "GET,PUT,DELETE,OPTIONS");
 });
 
-export const DELETE = asyncHandler(async (req: NextRequest, context: { params: { id: string } }) => {
+export const DELETE = asyncHandler(async (req: NextRequest, context: { params: Promise<{ id: string }> }) => {
   const user = await requireStandardUser(req);
-  await deleteTransaction(user.id, context.params.id);
+  const { id } = await context.params;
+  await deleteTransaction(user.id, id);
   return withCors(req, message("Transaction deleted"), "GET,PUT,DELETE,OPTIONS");
 });
 
