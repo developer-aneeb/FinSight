@@ -13,7 +13,12 @@ function getClientKey(req: NextRequest): string {
     return forwarded.split(",")[0]?.trim() || "unknown";
   }
 
-  return req.ip || "unknown";
+  const realIp = req.headers.get("x-real-ip");
+  if (realIp) {
+    return realIp.trim();
+  }
+
+  return "unknown";
 }
 
 function cleanupExpiredEntries(now: number): void {

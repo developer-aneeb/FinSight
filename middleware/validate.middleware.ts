@@ -5,7 +5,7 @@ export function validateBody<T extends z.ZodTypeAny>(schema: T, payload: unknown
   const parsed = schema.safeParse(payload);
 
   if (!parsed.success) {
-    const details = parsed.error.errors.map((entry) => ({
+    const details = parsed.error.issues.map((entry) => ({
       path: entry.path.join("."),
       message: entry.message,
     }));
