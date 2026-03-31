@@ -87,10 +87,14 @@ export default function AuthenticatedLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar />
-      <main className="page-container flex-1">{children}</main>
-      <SiteFooter compact />
+    <div className="min-h-screen bg-[radial-gradient(circle_at_20%_8%,rgba(110,199,190,0.52),transparent_38%),radial-gradient(circle_at_65%_20%,rgba(44,143,193,0.42),transparent_45%),linear-gradient(130deg,#0b6177_0%,#0d4268_48%,#0a2b4d_100%)] p-1.5 sm:p-2.5">
+      <div className="mx-auto flex min-h-[calc(100vh-16px)] w-full max-w-[1440px] gap-1.5">
+        <Navbar />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <main className="flex-1">{children}</main>
+          <SiteFooter compact />
+        </div>
+      </div>
     </div>
   );
 }
