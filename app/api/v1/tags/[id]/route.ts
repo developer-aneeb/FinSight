@@ -16,16 +16,18 @@ const updateTagSchema = z
     message: "At least one field is required",
   });
 
-export const PUT = asyncHandler(async (req: NextRequest, context: { params: { id: string } }) => {
+export const PUT = asyncHandler(async (req: NextRequest, context: { params: Promise<{ id: string }> }) => {
   const user = await requireStandardUser(req);
   const payload = validateBody(updateTagSchema, await req.json());
-  const tag = await updateTag(user.id, context.params.id, payload);
+  const { id } = await context.params;
+  const tag = await updateTag(user.id, id, payload);
   return withCors(req, ok(tag), "PUT,DELETE,OPTIONS");
 });
 
-export const DELETE = asyncHandler(async (req: NextRequest, context: { params: { id: string } }) => {
+export const DELETE = asyncHandler(async (req: NextRequest, context: { params: Promise<{ id: string }> }) => {
   const user = await requireStandardUser(req);
-  await deleteTag(user.id, context.params.id);
+  const { id } = await context.params;
+  await deleteTag(user.id, id);
   return withCors(req, message("Tag deleted"), "PUT,DELETE,OPTIONS");
 });
 
