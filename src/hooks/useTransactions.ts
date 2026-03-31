@@ -8,7 +8,7 @@ import { useMemo } from "react";
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost, apiPut, apiDelete } from "./apiClient";
 import { useFilterStore } from "@/store/filterStore";
-import { shallow } from "zustand/shallow";
+import { useShallow } from "zustand/react/shallow";
 import toast from "react-hot-toast";
 import type {
   Transaction,
@@ -44,7 +44,7 @@ export function useTransactions(page = 1, pageSize = 20) {
     amountMax,
     tags,
   } = useFilterStore(
-    (state) => ({
+    useShallow((state) => ({
       searchQuery: state.searchQuery,
       selectedType: state.selectedType,
       selectedCategoryId: state.selectedCategoryId,
@@ -53,8 +53,7 @@ export function useTransactions(page = 1, pageSize = 20) {
       amountMin: state.amountMin,
       amountMax: state.amountMax,
       tags: state.tags,
-    }),
-    shallow
+    }))
   );
 
   const tagsKey = useMemo(() => [...tags].sort().join(","), [tags]);
