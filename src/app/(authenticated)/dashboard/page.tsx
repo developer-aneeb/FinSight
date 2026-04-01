@@ -12,8 +12,8 @@ import { Button } from "@/components/ui/Button";
 import { CardSkeleton, Skeleton } from "@/components/ui/Skeleton";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { ROUTES } from "@/utils/constants";
-import type { Alert, Budget, Insight, Transaction } from "@/types";
-import { Bell, ChevronDown, MoreHorizontal, RefreshCw, Search, SlidersHorizontal, TrendingUp, TrendingDown } from "lucide-react";
+import type { Budget, Insight, Transaction } from "@/types";
+import { Bell, ChevronDown, CircleHelp, LifeBuoy, MessageCircle, MoreHorizontal, RefreshCw, Search, SlidersHorizontal, TrendingUp, TrendingDown } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from "recharts";
 import { RobotIcon, SparklineIcon } from "@/components/icons";
 
@@ -86,7 +86,7 @@ function DashboardTrendChart({
   return (
     <div className="mt-2 rounded-[14px] border border-white/35 bg-white/18 p-3">
       <div className="relative h-[260px] min-w-0 overflow-hidden w-full">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%" minWidth={280} minHeight={220}>
           <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 8 }}>
             <defs>
               <linearGradient id="trendGlowIncome" x1="0" y1="0" x2="0" y2="1">
@@ -141,7 +141,9 @@ export default function DashboardPage() {
   const { user } = useAuthStore();
   const { data, isLoading, error, refetch, isRefetching } = useDashboardSummary();
   const { data: alertsData } = useAlerts();
-  const { data: insightsData, refetch: refetchInsights, isRefetching: isRefetchingInsights } = useInsights(3);
+  const { data: insightsData, refetch: refetchInsights, isRefetching: isRefetchingInsights } = useInsights(3, {
+    enabled: !isLoading,
+  });
   const generateInsights = useGenerateInsights();
   const dismissInsight = useDismissInsight();
   const [trendRange, setTrendRange] = useState<TrendRange>("6 months");
@@ -156,13 +158,12 @@ export default function DashboardPage() {
   };
 
   const summary = data?.data;
-  const alerts: Alert[] = useMemo(() => alertsData?.data ?? [], [alertsData?.data]);
-  const insights: Insight[] = useMemo(() => insightsData?.data ?? [], [insightsData?.data]);
-
+  const alerts = useMemo(() => alertsData?.data ?? [], [alertsData?.data]);
   const unreadAlerts = useMemo(
-    () => alerts.filter((a) => String(a.status || "").toLowerCase() === "unread"),
+    () => alerts.filter((item) => String(item.status || "").toLowerCase() === "unread"),
     [alerts]
   );
+  const insights: Insight[] = useMemo(() => insightsData?.data ?? [], [insightsData?.data]);
 
   const trendData = useMemo(() => {
     const monthly = summary?.monthlyTrend ?? [];
@@ -388,7 +389,7 @@ export default function DashboardPage() {
                   <input
                     id="searchQuery"
                     name="searchQuery"
-                    className="w-[120px] sm:w-[168px] bg-transparent text-[13px] placeholder:text-white/70 focus:outline-none"
+                    className="w-[140px] sm:w-[168px] bg-transparent text-[13px] placeholder:text-white/70 focus:outline-none"
                     placeholder="Search Filtering"
                     aria-label="Search Filtering"
                     value={searchQuery}
@@ -399,7 +400,7 @@ export default function DashboardPage() {
                 </div>
                 <Link href={ROUTES.NOTIFICATIONS} className="relative grid h-8 w-8 place-items-center rounded-full border border-white/40 bg-white/20 text-white shrink-0" aria-label="alerts">
                   <Bell className="h-4 w-4" />
-                  {!!unreadAlerts.length && <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-emerald-400" />}
+                  {!!summary?.unreadAlerts && <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-emerald-400" />}
                 </Link>
                 <button
                   onClick={() => void refetch()}
@@ -418,7 +419,7 @@ export default function DashboardPage() {
             </div>
           </header>
 
-          <section className="grid grid-cols-1 gap-1.5 md:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr]">
+          <section className="grid grid-cols-1 gap-1.5 md:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr]">
             <article className="rounded-[16px] border border-white/25 bg-[linear-gradient(130deg,rgba(124,206,225,0.34),rgba(14,89,137,0.35))] px-4 py-3 text-white backdrop-blur-md">
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-[15px] text-white/85">Total Balance</p>
@@ -467,6 +468,28 @@ export default function DashboardPage() {
                   <p className="text-[12px] text-[#204f6b] mt-1">Share = {Math.round(categoryShare)}%</p>
                 </div>
                 <RingMeter value={categoryShare} color="#f97316" />
+              </div>
+            </article>
+
+            <article className="rounded-[16px] border border-white/25 bg-[rgba(228,245,250,0.74)] px-4 py-3 text-[#0b2c43] backdrop-blur-md">
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-[15px] font-semibold">Support & Help</p>
+                <LifeBuoy className="h-4 w-4" />
+              </div>
+
+              <div className="mt-3 grid grid-cols-2 gap-2 text-[12px] font-medium">
+                <Link href={ROUTES.LIVE_CHATBOT} className="rounded-lg bg-white/50 px-2.5 py-2 hover:bg-white/70 flex items-center gap-1.5">
+                  <MessageCircle className="h-3.5 w-3.5" /> Chatbot
+                </Link>
+                <Link href={ROUTES.SUPPORT_TICKETS} className="rounded-lg bg-white/50 px-2.5 py-2 hover:bg-white/70 flex items-center gap-1.5">
+                  <LifeBuoy className="h-3.5 w-3.5" /> Support
+                </Link>
+                <Link href={ROUTES.FAQ} className="rounded-lg bg-white/50 px-2.5 py-2 hover:bg-white/70 flex items-center gap-1.5">
+                  <CircleHelp className="h-3.5 w-3.5" /> FAQ
+                </Link>
+                <Link href={ROUTES.HELP_CENTER} className="rounded-lg bg-white/50 px-2.5 py-2 hover:bg-white/70 flex items-center gap-1.5">
+                  <LifeBuoy className="h-3.5 w-3.5" /> Help
+                </Link>
               </div>
             </article>
           </section>
@@ -585,7 +608,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="min-w-full text-left text-[12px]">
+              <table className="min-w-[620px] text-left text-[12px] sm:min-w-full">
                 <thead>
                   <tr className="border-b border-white/40 text-[#2f5873]">
                     <th className="py-2 pr-3 font-semibold">Vendor</th>
@@ -664,7 +687,7 @@ export default function DashboardPage() {
               <div className="mb-2 flex items-center justify-between">
                 <h2 className="text-[16px] font-bold">Alerts</h2>
                 <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-semibold text-amber-700">
-                  {summary.unreadAlerts || unreadAlerts.length} unread
+                  {(summary.unreadAlerts ?? unreadAlerts.length)} unread
                 </span>
               </div>
               <div className="space-y-2">
