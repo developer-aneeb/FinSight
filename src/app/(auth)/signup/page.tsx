@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -13,6 +14,7 @@ import { signupSchema } from "@/utils/validation";
 import { Eye, EyeOff, UserPlus } from "lucide-react";
 
 export default function SignupPage() {
+  const router = useRouter();
   const { signup, isSignupLoading } = useAuth();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -21,6 +23,10 @@ export default function SignupPage() {
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<{ full_name?: string; email?: string; password?: string }>({});
+
+  useEffect(() => {
+    router.prefetch(ROUTES.LOGIN);
+  }, [router]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
