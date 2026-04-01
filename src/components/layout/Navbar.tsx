@@ -29,6 +29,9 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  MessageCircle,
+  CircleHelp,
+  LifeBuoy,
 } from "lucide-react";
 
 const userNavItems = [
@@ -38,6 +41,10 @@ const userNavItems = [
   { label: "Budgets", href: ROUTES.BUDGETS, icon: PiggyBank },
   { label: "Category", href: ROUTES.CATEGORIES, icon: FolderOpen },
   { label: "AI Hub", href: ROUTES.INSIGHTS, icon: Sparkles },
+  { label: "Live Chatbot", href: ROUTES.LIVE_CHATBOT, icon: MessageCircle },
+  { label: "FAQ", href: ROUTES.FAQ, icon: CircleHelp },
+  { label: "Help Center", href: ROUTES.HELP_CENTER, icon: LifeBuoy },
+  { label: "Support", href: ROUTES.SUPPORT_TICKETS, icon: MessageCircle },
   { label: "Profile", href: ROUTES.PROFILE, icon: UserCircle },
   { label: "Settings", href: ROUTES.SETTINGS, icon: Settings },
   { label: "Notifications", href: ROUTES.NOTIFICATIONS, icon: BellRing },
@@ -47,6 +54,7 @@ const adminNavItems = [
   { label: "Admin Home", href: ROUTES.ADMIN, icon: ShieldCheck },
   { label: "Users", href: ROUTES.ADMIN_USERS, icon: Users },
   { label: "Notifications", href: ROUTES.ADMIN_NOTIFICATIONS, icon: BellRing },
+  { label: "Support Tickets", href: ROUTES.ADMIN_SUPPORT_TICKETS, icon: MessageCircle },
   { label: "Profile", href: ROUTES.PROFILE, icon: UserCircle },
   { label: "Settings", href: ROUTES.SETTINGS, icon: Settings },
 ];
@@ -86,6 +94,11 @@ export function Navbar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={() => {
+                if (isMobileOpen) {
+                  setIsMobileOpen(false);
+                }
+              }}
               onMouseEnter={() => prefetchRoute(item.href)}
               onFocus={() => prefetchRoute(item.href)}
               className={cn(
@@ -119,7 +132,7 @@ export function Navbar() {
   return (
     <>
       <button
-        className="fixed left-3 top-3 z-40 grid h-10 w-10 place-items-center rounded-full border border-white/45 bg-[#0f5d79]/70 text-white backdrop-blur-md lg:hidden"
+        className="fixed left-3 top-3 z-40 grid h-11 w-11 place-items-center rounded-full border border-white/45 bg-[#0f5d79]/70 text-white backdrop-blur-md lg:hidden"
         onClick={() => setIsMobileOpen(true)}
         aria-label="Open sidebar"
       >
