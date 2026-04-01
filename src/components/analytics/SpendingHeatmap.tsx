@@ -48,7 +48,8 @@ export function SpendingHeatmap({ data, monthString }: SpendingHeatmapProps) {
       </CardHeader>
       
       <div className="p-4 pt-0">
-        <div className="grid grid-cols-7 gap-1">
+        <div className="overflow-x-auto">
+          <div className="min-w-[340px] grid grid-cols-7 gap-1 sm:min-w-0">
           {dayNames.map((day) => (
             <div key={day} className="text-center text-xs font-medium text-gray-500 mb-1">
               {day}
@@ -81,6 +82,7 @@ export function SpendingHeatmap({ data, monthString }: SpendingHeatmapProps) {
               </div>
             );
           })}
+          </div>
         </div>
         
         <div className="mt-4 flex items-center justify-end gap-2 text-xs text-gray-500">
