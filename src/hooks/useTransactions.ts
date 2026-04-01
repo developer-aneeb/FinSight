@@ -9,6 +9,7 @@ import { keepPreviousData, useQuery, useMutation, useQueryClient } from "@tansta
 import { apiGet, apiPost, apiPut, apiDelete } from "./apiClient";
 import { useFilterStore } from "@/store/filterStore";
 import { useShallow } from "zustand/react/shallow";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import toast from "react-hot-toast";
 import type {
   Transaction,
@@ -57,12 +58,13 @@ export function useTransactions(page = 1, pageSize = 20) {
   );
 
   const tagsKey = useMemo(() => [...tags].sort().join(","), [tags]);
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
 
   const queryString = useMemo(() => {
     const params = new URLSearchParams();
     params.set("page", String(page));
     params.set("pageSize", String(pageSize));
-    if (searchQuery) params.set("search", searchQuery);
+    if (debouncedSearchQuery) params.set("search", debouncedSearchQuery);
     if (selectedType && selectedType !== "all") params.set("type", selectedType);
     if (selectedCategoryId) params.set("categoryId", selectedCategoryId);
     if (dateFrom) params.set("dateFrom", dateFrom);
@@ -75,7 +77,7 @@ export function useTransactions(page = 1, pageSize = 20) {
   }, [
     page,
     pageSize,
-    searchQuery,
+    debouncedSearchQuery,
     selectedType,
     selectedCategoryId,
     dateFrom,
@@ -91,7 +93,7 @@ export function useTransactions(page = 1, pageSize = 20) {
       TRANSACTIONS_KEY,
       page,
       pageSize,
-      searchQuery,
+      debouncedSearchQuery,
       selectedType,
       selectedCategoryId,
       dateFrom,
@@ -102,7 +104,7 @@ export function useTransactions(page = 1, pageSize = 20) {
     ],
     queryFn: () => apiGet<Transaction[]>(`/transactions?${queryString}`) as Promise<TransactionsListResponse>,
     placeholderData: keepPreviousData,
-    staleTime: 30_000,
+    staleTime: 10_000,
     gcTime: 300_000,
   });
 }

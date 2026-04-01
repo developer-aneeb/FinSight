@@ -6,6 +6,7 @@ import { useAuthStore } from "@/store/authStore";
 import type { ApiResponse } from "@/types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const REQUEST_TIMEOUT_MS = 15000;
 
 export class ApiError extends Error {
   status: number;
@@ -37,10 +38,34 @@ async function apiFetch<T>(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
+  const controller = new AbortController();
+  let didTimeout = false;
+  const timeoutId = setTimeout(() => {
+    didTimeout = true;
+    controller.abort();
+  }, REQUEST_TIMEOUT_MS);
+
+  const upstreamSignal = options.signal;
+  const abortFromUpstream = () => controller.abort();
+  upstreamSignal?.addEventListener("abort", abortFromUpstream);
+
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     ...options,
     headers,
     credentials: "include",
+    signal: controller.signal,
+  }).catch((error) => {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      if (didTimeout) {
+        throw new ApiError(408, "Request timed out. Please try again.");
+      }
+      throw new ApiError(499, "Request cancelled.");
+    }
+
+    throw error;
+  }).finally(() => {
+    clearTimeout(timeoutId);
+    upstreamSignal?.removeEventListener("abort", abortFromUpstream);
   });
 
   let data: any = {};

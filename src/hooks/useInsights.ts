@@ -7,10 +7,11 @@ import type { ApiResponse, Insight, InsightGenerationData } from "@/types";
 
 const INSIGHTS_KEY = "insights";
 
-export function useInsights(limit = 10) {
+export function useInsights(limit = 10, options?: { enabled?: boolean }) {
   return useQuery<ApiResponse<Insight[]>>({
     queryKey: [INSIGHTS_KEY, limit],
     queryFn: () => apiGet("/insights", { limit }),
+    enabled: options?.enabled ?? true,
     staleTime: 120_000,
     gcTime: 600_000,
   });

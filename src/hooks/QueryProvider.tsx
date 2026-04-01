@@ -13,14 +13,17 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 60 * 1000, // 1 minute
+            staleTime: 10 * 1000,
+            gcTime: 15 * 60 * 1000,
             retry: (failureCount, error) => {
-              if (error instanceof ApiError && error.status === 401) {
+              if (error instanceof ApiError && (error.status === 401 || error.status === 499)) {
                 return false;
               }
               return failureCount < 2;
             },
             refetchOnWindowFocus: false,
+            refetchOnMount: true,
+            refetchOnReconnect: true,
           },
         },
       })

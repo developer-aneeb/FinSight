@@ -7,14 +7,14 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
-import { apiPost, apiGet, apiPatch } from "./apiClient";
+import { apiPost, apiPatch } from "./apiClient";
 import { ROUTES } from "@/utils/constants";
 import toast from "react-hot-toast";
 import type {
   ForgotPasswordInput,
   LoginCredentials,
-  SignupCredentials,
   Profile,
+  SignupCredentials,
   UpdateProfileInput,
 } from "@/types";
 
@@ -33,48 +33,14 @@ export function useAuth() {
       if (data.data) {
         const token = data.data.session.access_token;
         const roleFromLogin = data.data.role;
-        // First set token so isAuthenticated becomes true
+        // Set token immediately so protected routes can render without waiting.
         setUser(null, token);
 
         toast.success("Welcome back!");
 
         const targetRoute = roleFromLogin === "admin" ? ROUTES.ADMIN : ROUTES.DASHBOARD;
 
-        if (roleFromLogin === "admin") {
-          void queryClient.prefetchQuery({
-            queryKey: ["admin", "dashboard"],
-            queryFn: () => apiGet("/admin/dashboard"),
-          });
-        } else {
-          void queryClient.prefetchQuery({
-            queryKey: ["analytics", "dashboard"],
-            queryFn: () => apiGet("/analytics/dashboard"),
-          });
-          void queryClient.prefetchQuery({
-            queryKey: ["alerts"],
-            queryFn: () => apiGet("/alerts"),
-          });
-        }
-
-        router.push(targetRoute);
-
-        // Fetch profile in background so navigation is not blocked
-        void apiGet<Profile>("/auth/profile")
-          .then((profileRes) => {
-            if (profileRes.data) {
-              setUser(profileRes.data, token);
-
-              const profileRoute =
-                profileRes.data.role === "admin" ? ROUTES.ADMIN : ROUTES.DASHBOARD;
-
-              if (profileRoute !== targetRoute) {
-                router.replace(profileRoute);
-              }
-            }
-          })
-          .catch(() => {
-            // Ignore: user remains authenticated with token
-          });
+        router.replace(targetRoute);
       }
     },
     onError: (error: Error) => {
@@ -87,7 +53,7 @@ export function useAuth() {
       apiPost("/auth/signup", credentials),
     onSuccess: () => {
       toast.success("Account created! Please log in.");
-      router.push(ROUTES.LOGIN);
+      router.replace(ROUTES.LOGIN);
     },
     onError: (error: Error) => {
       toast.error(error.message || "Signup failed");
