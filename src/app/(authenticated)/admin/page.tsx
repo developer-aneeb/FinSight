@@ -220,8 +220,8 @@ export default function AdminPage() {
 
         <Card>
           <CardHeader title="Role Distribution" subtitle="Admin vs standard users" />
-          <div className="h-72" role="img" aria-label="Role distribution pie chart">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-72 min-w-0" role="img" aria-label="Role distribution pie chart">
+            <ResponsiveContainer width="100%" height="100%" minWidth={280} minHeight={220}>
               <PieChart>
                 <Pie
                   data={roleChartData}
@@ -246,8 +246,8 @@ export default function AdminPage() {
 
       <Card>
         <CardHeader title="Alerts Severity" subtitle="Total and unread by severity" />
-        <div className="h-80" role="img" aria-label="Alerts severity bar chart">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="h-80 min-w-0" role="img" aria-label="Alerts severity bar chart">
+          <ResponsiveContainer width="100%" height="100%" minWidth={320} minHeight={240}>
             <BarChart data={alertsChartData} margin={{ top: 5, right: 12, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
               <XAxis dataKey="severity" tick={{ fontSize: 12 }} stroke="#9CA3AF" />

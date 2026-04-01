@@ -209,7 +209,7 @@ export default function AdminUsersPage() {
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       <div className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
           <div className="flex items-center gap-3">
             <ShieldCheck size={24} className="text-brand-600" />
             <h1 className="text-2xl font-bold text-gray-900">Admin User Management</h1>
@@ -264,7 +264,7 @@ export default function AdminUsersPage() {
         ) : (
           <div>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="min-w-[920px] w-full text-sm">
                 <thead>
                   <tr className="border-b text-left text-gray-500">
                     <th className="px-4 py-3 font-medium">Name</th>
