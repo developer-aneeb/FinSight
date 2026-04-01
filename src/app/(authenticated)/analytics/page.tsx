@@ -2,11 +2,12 @@
 
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
-import { useAnalyticsData } from "@/hooks/useAnalytics";
+import { useAnalyticsData, useDashboardSummary } from "@/hooks/useAnalytics";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
 import { CardSkeleton } from "@/components/ui/Skeleton";
+import { Button } from "@/components/ui/Button";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { calcPercentage } from "@/utils/formatCurrency";
 import {
@@ -38,9 +39,39 @@ const ExportButton = dynamic(
 
 export default function AnalyticsPage() {
   const [selectedMonth, setSelectedMonth] = useState<string>("");
-  const { data, isLoading } = useAnalyticsData(selectedMonth || undefined);
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isFetching,
+  } = useAnalyticsData(selectedMonth || undefined);
+  const { data: dashboardData } = useDashboardSummary();
 
   const analytics = data?.data;
+  const dashboardSummary = dashboardData?.data;
+
+  const hasDetailedData = useMemo(() => {
+    if (!analytics) {
+      return false;
+    }
+
+    const hasMonthlyNumbers = (analytics.monthlyComparison ?? []).some(
+      (entry: any) =>
+        (entry?.income ?? 0) > 0 ||
+        (entry?.expenses ?? 0) > 0 ||
+        (entry?.savings ?? 0) !== 0
+    );
+
+    return (
+      (analytics.spendingByCategory?.length ?? 0) > 0 ||
+      (analytics.dailySpending?.length ?? 0) > 0 ||
+      hasMonthlyNumbers ||
+      analytics.avgDailySpend > 0 ||
+      analytics.savingsRate !== 0
+    );
+  }, [analytics]);
 
   // Calculate trends vs previous month
   const currentMonthData = analytics?.monthlyComparison?.[1];
@@ -99,36 +130,59 @@ export default function AnalyticsPage() {
     []
   );
 
-  const totalSpend = useMemo(
-    () =>
+  const totalSpend = useMemo(() => {
+    const detailedTotalSpend =
       analytics?.spendingByCategory?.reduce(
         (sum: number, c: any) => sum + (c.amount ?? c.total ?? 0),
         0
-      ) ?? 0,
-    [analytics?.spendingByCategory]
-  );
+      ) ?? 0;
 
-  const dailyTrendData = useMemo(
-    () =>
+    return detailedTotalSpend > 0
+      ? detailedTotalSpend
+      : (dashboardSummary?.totalExpenses ?? 0);
+  }, [analytics?.spendingByCategory, dashboardSummary?.totalExpenses]);
+
+  const dailyTrendData = useMemo(() => {
+    const detailedSeries =
       analytics?.dailySpending?.map((d: any) => ({
         month: d.date,
         income: 0,
         expenses: d.amount ?? d.total ?? 0,
-      })) ?? [],
-    [analytics?.dailySpending]
-  );
+      })) ?? [];
 
-  const categoryBreakdownData = useMemo(
-    () =>
-      (analytics?.spendingByCategory ?? []).map((c: any) => ({
-        category_name: c.category ?? c.name ?? "",
-        category_icon: c.icon ?? "📁",
-        category_color: c.color ?? "#6B7280",
-        total: c.amount ?? c.total ?? 0,
-        percentage: totalSpend > 0 ? calcPercentage(c.amount ?? c.total ?? 0, totalSpend) : 0,
-      })),
-    [analytics?.spendingByCategory, totalSpend]
-  );
+    return detailedSeries.length > 0
+      ? detailedSeries
+      : (dashboardSummary?.monthlyTrend ?? []);
+  }, [analytics?.dailySpending, dashboardSummary?.monthlyTrend]);
+
+  const categoryBreakdownData = useMemo(() => {
+    const detailedBreakdown = (analytics?.spendingByCategory ?? []).map((c: any) => ({
+      category_name: c.category ?? c.name ?? "",
+      category_icon: c.icon ?? "📁",
+      category_color: c.color ?? "#6B7280",
+      total: c.amount ?? c.total ?? 0,
+      percentage: totalSpend > 0 ? calcPercentage(c.amount ?? c.total ?? 0, totalSpend) : 0,
+    }));
+
+    return detailedBreakdown.length > 0
+      ? detailedBreakdown
+      : (
+          dashboardSummary?.topCategories?.map((category) => ({
+            category_name: category.category_name,
+            category_icon: category.category_icon,
+            category_color: category.category_color,
+            total: category.total,
+            percentage: category.percentage,
+          })) ?? []
+        );
+  }, [analytics?.spendingByCategory, dashboardSummary?.topCategories, totalSpend]);
+
+  const hasRenderableData =
+    totalSpend > 0 ||
+    dailyTrendData.length > 0 ||
+    categoryBreakdownData.length > 0 ||
+    hasDetailedData ||
+    Boolean(dashboardSummary);
 
   if (isLoading) {
     return (
@@ -147,6 +201,22 @@ export default function AnalyticsPage() {
     );
   }
 
+  if (isError) {
+    return (
+      <Card>
+        <div className="space-y-3 p-6" role="alert" aria-live="assertive">
+          <h2 className="text-lg font-semibold text-gray-900">Unable to load analytics</h2>
+          <p className="text-sm text-gray-600">
+            {error instanceof Error ? error.message : "A network or server error occurred."}
+          </p>
+          <Button type="button" variant="outline" onClick={() => void refetch()} disabled={isFetching}>
+            Retry
+          </Button>
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -157,9 +227,9 @@ export default function AnalyticsPage() {
             Deep dive into your spending patterns
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap sm:gap-3">
           <ExportButton targetId="analytics-exportable" filename={`finsight-analytics-${selectedMonth || "current"}`} />
-          <div className="w-48">
+          <div className="w-full sm:w-48">
             <Select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
@@ -172,7 +242,7 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {analytics ? (
+      {hasRenderableData ? (
         <div id="analytics-exportable" className="space-y-6">
           {/* Summary Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -186,13 +256,13 @@ export default function AnalyticsPage() {
             />
             <StatCard
               title="Avg Daily Spend"
-              value={formatCurrency(analytics.avgDailySpend ?? 0)}
+              value={formatCurrency(analytics?.avgDailySpend ?? 0)}
               icon={<CalendarDays size={20} />}
               className="border-l-4 border-l-brand-400"
             />
             <StatCard
               title="Savings Rate"
-              value={`${analytics.savingsRate?.toFixed(1) ?? 0}%`}
+              value={`${analytics?.savingsRate?.toFixed(1) ?? 0}%`}
               icon={<PiggyBank size={20} />}
               trend={savingsTrend?.direction as any}
               trendValue={savingsTrend?.text}
@@ -200,7 +270,7 @@ export default function AnalyticsPage() {
             />
             <StatCard
               title="Categories Used"
-              value={String(analytics.spendingByCategory?.length ?? 0)}
+              value={String(categoryBreakdownData.length)}
               icon={<BarChart3 size={20} />}
               className="border-l-4 border-l-brand-500"
             />
@@ -208,14 +278,18 @@ export default function AnalyticsPage() {
 
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <MonthlyTrendChart data={dailyTrendData} />
+            <div className="min-w-0">
+              <MonthlyTrendChart data={dailyTrendData} />
+            </div>
 
-            <CategoryBreakdown data={categoryBreakdownData} />
+            <div className="min-w-0">
+              <CategoryBreakdown data={categoryBreakdownData} />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-6">
             <SpendingHeatmap
-              data={analytics.dailySpending || []}
+              data={analytics?.dailySpending || []}
               monthString={selectedMonth || new Date().toISOString().slice(0, 7)}
             />
           </div>
@@ -226,7 +300,7 @@ export default function AnalyticsPage() {
               <h2 className="section-header mb-0">Spending by Category</h2>
             </CardHeader>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="min-w-[520px] w-full text-sm">
                 <thead>
                   <tr className="border-b text-left text-gray-500">
                     <th className="px-4 py-3 font-medium">Category</th>
@@ -239,12 +313,12 @@ export default function AnalyticsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {analytics.spendingByCategory?.map((cat: any) => {
+                  {categoryBreakdownData.map((cat: any) => {
                     const amount = cat.amount ?? cat.total ?? 0;
                     return (
-                      <tr key={cat.category ?? cat.name} className="hover:bg-gray-50">
+                      <tr key={cat.category ?? cat.name ?? cat.category_name} className="hover:bg-gray-50">
                         <td className="px-4 py-3 font-medium text-gray-900">
-                          {cat.category ?? cat.name}
+                          {cat.category ?? cat.name ?? cat.category_name}
                         </td>
                         <td className="px-4 py-3 text-right text-gray-700">
                           {formatCurrency(amount)}
