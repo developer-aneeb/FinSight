@@ -67,6 +67,10 @@ export const ROUTES = {
   BUDGETS: "/budgets",
   CATEGORIES: "/categories",
   INSIGHTS: "/insights",
+  LIVE_CHATBOT: "/live-chatbot",
+  FAQ: "/faq",
+  HELP_CENTER: "/help-center",
+  SUPPORT_TICKETS: "/support",
   INSIGHTS_PIPELINE: "/insights/pipeline",
   ANALYTICS: "/analytics",
   NOTIFICATIONS: "/notifications",
@@ -75,6 +79,7 @@ export const ROUTES = {
   ADMIN: "/admin",
   ADMIN_USERS: "/admin/users",
   ADMIN_NOTIFICATIONS: "/admin/notifications",
+  ADMIN_SUPPORT_TICKETS: "/admin/support-tickets",
 } as const;
 
 /** API Routes */
