@@ -9,6 +9,7 @@ const tabs = [
   { label: "Analytics", href: ROUTES.ADMIN },
   { label: "Users", href: ROUTES.ADMIN_USERS },
   { label: "Notifications", href: ROUTES.ADMIN_NOTIFICATIONS },
+  { label: "Support", href: ROUTES.ADMIN_SUPPORT_TICKETS },
 ];
 
 export function AdminSubnav() {
