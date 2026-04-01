@@ -26,8 +26,17 @@
   }
 
   body {
-    @apply bg-gray-50 text-foreground antialiased;
+    @apply text-foreground antialiased;
+    background-color: rgb(249 250 251);
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  html[data-theme-mode="light"] body {
+    background-color: #ffffff;
+  }
+
+  html[data-theme-mode="dark"] body {
+    background-color: #020617;
   }
 }
 
