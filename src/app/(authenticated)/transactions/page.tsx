@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTransactions, useCreateTransaction, useDeleteTransaction, useUpdateTransaction } from "@/hooks/useTransactions";
 import { useCategories } from "@/hooks/useCategories";
 import { TransactionItem } from "@/components/transactions/TransactionItem";
@@ -12,9 +13,14 @@ import { TransactionListSkeleton } from "@/components/ui/Skeleton";
 import { Card } from "@/components/ui/Card";
 import { Plus, SlidersHorizontal, TrendingUp, TrendingDown, Wallet } from "lucide-react";
 import { formatCurrency } from "@/utils/formatCurrency";
+import { useFilterStore } from "@/store/filterStore";
 import type { CreateTransactionInput, Transaction } from "@/types";
 
 export default function TransactionsPage() {
+  const searchParams = useSearchParams();
+  const queryFromUrl = searchParams.get("q") ?? "";
+  const setSearchQuery = useFilterStore((state) => state.setSearchQuery);
+  const hydratedSearchRef = useRef(false);
   const [page, setPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -25,6 +31,15 @@ export default function TransactionsPage() {
   const createMutation = useCreateTransaction();
   const updateMutation = useUpdateTransaction();
   const deleteMutation = useDeleteTransaction();
+
+  useEffect(() => {
+    // Sync ?q=... from navigation entry points (e.g. dashboard global search).
+    if (!hydratedSearchRef.current || queryFromUrl) {
+      setSearchQuery(queryFromUrl.trim());
+      hydratedSearchRef.current = true;
+      setPage(1);
+    }
+  }, [queryFromUrl, setSearchQuery]);
 
   const transactions = data?.data ?? [];
   const pagination = data?.pagination ?? null;
