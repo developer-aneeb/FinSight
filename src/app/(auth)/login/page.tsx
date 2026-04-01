@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -13,15 +14,20 @@ import { loginSchema } from "@/utils/validation";
 import { Eye, EyeOff, LogIn } from "lucide-react";
 
 export default function LoginPage() {
+  const router = useRouter();
   const { login, isLoginLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
+  useEffect(() => {
+    router.prefetch(ROUTES.DASHBOARD);
+    router.prefetch(ROUTES.ADMIN);
+  }, [router]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
     const parsed = loginSchema.safeParse({ email, password });
     if (!parsed.success) {
       const nextErrors: { email?: string; password?: string } = {};
