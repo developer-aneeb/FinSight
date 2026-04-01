@@ -268,3 +268,25 @@ export interface SearchResult {
   query: string;
   filters_applied: Record<string, unknown>;
 }
+
+export type SupportTicketType = "message" | "review";
+export type SupportTicketStatus = "open" | "in_review" | "resolved" | "closed";
+
+export interface SupportTicket {
+  id: string;
+  user_id: string;
+  subject: string;
+  message: string;
+  ticket_type: SupportTicketType;
+  rating: number | null;
+  status: SupportTicketStatus;
+  admin_response: string | null;
+  admin_response_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminSupportTicket extends SupportTicket {
+  user_email: string;
+  user_full_name: string;
+}
