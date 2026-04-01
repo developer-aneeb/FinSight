@@ -10,6 +10,14 @@ import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import type { Transaction, Category, CreateTransactionInput, TransactionType, RecurrenceInterval } from "@/types";
 
+function getLocalDateInputValue() {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 interface TransactionFormProps {
   transaction?: Transaction | null;
   categories: Category[];
@@ -35,7 +43,7 @@ export function TransactionForm({
   const [notes, setNotes] = useState(transaction?.notes || "");
   const [tags, setTags] = useState((transaction?.tags || []).map((tag) => tag.name).join(", "));
   const [date, setDate] = useState(
-    transaction?.transaction_date || new Date().toISOString().split("T")[0]
+    transaction?.transaction_date || getLocalDateInputValue()
   );
   const [isRecurring, setIsRecurring] = useState(transaction?.is_recurring || false);
   const [recurrence, setRecurrence] = useState(
@@ -71,7 +79,7 @@ export function TransactionForm({
     setDescription(transaction?.description || "");
     setNotes(transaction?.notes || "");
     setTags((transaction?.tags || []).map((tag) => tag.name).join(", "));
-    setDate(transaction?.transaction_date || new Date().toISOString().split("T")[0]);
+    setDate(transaction?.transaction_date || getLocalDateInputValue());
     setIsRecurring(transaction?.is_recurring || false);
     setRecurrence(transaction?.is_recurring ? (transaction?.recurrence || "monthly") : "none");
     setErrors({});
