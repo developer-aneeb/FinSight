@@ -40,8 +40,8 @@ export function MonthlyTrendChart({ data }: MonthlyTrendChartProps) {
   return (
     <Card>
       <CardHeader title="Monthly Trends" subtitle="Income vs Expenses (last 6 months)" />
-      <div className="h-72 min-w-0" role="img" aria-label="Monthly income and expenses bar chart">
-        <ResponsiveContainer width="100%" height={288} minWidth={280} minHeight={220}>
+      <div className="h-64 min-h-[240px] min-w-0 sm:h-72" role="img" aria-label="Monthly income and expenses bar chart">
+        <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
             <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#9CA3AF" />

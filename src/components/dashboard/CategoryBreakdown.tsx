@@ -52,8 +52,8 @@ export function CategoryBreakdown({ data }: CategoryBreakdownProps) {
   return (
     <Card>
       <CardHeader title="Spending by Category" subtitle="Current month breakdown" />
-      <div className="h-72 min-w-0" role="img" aria-label="Category spending pie chart">
-        <ResponsiveContainer width="100%" height={288} minWidth={260} minHeight={220}>
+      <div className="h-64 min-h-[240px] min-w-0 sm:h-72" role="img" aria-label="Category spending pie chart">
+        <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={chartData}
