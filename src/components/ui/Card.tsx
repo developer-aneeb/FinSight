@@ -7,7 +7,7 @@ import React from "react";
 import { cn } from "@/utils/cn";
 
 interface CardProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   className?: string;
   padding?: "sm" | "md" | "lg";
   hoverable?: boolean;
@@ -18,7 +18,8 @@ export function Card({
   className,
   padding = "md",
   hoverable = false,
-}: CardProps) {
+  ...props
+}: CardProps & React.HTMLAttributes<HTMLDivElement>) {
   const paddings = { sm: "p-3", md: "p-5", lg: "p-6" };
 
   return (
@@ -29,6 +30,7 @@ export function Card({
         hoverable && "transition-shadow hover:shadow-md",
         className
       )}
+      {...props}
     >
       {children}
     </div>
