@@ -6,7 +6,7 @@ A full-stack personal finance management application built for the Pakistani mar
 
 | Layer | Technology |
 |---|---|
-| **Backend** | Express 4.21 + TypeScript 5.6 |
+| **Backend** | Next.js 14 Route Handlers + TypeScript 5.6 |
 | **Frontend** | Next.js 14 (App Router) + TypeScript 5.6 |
 | **Styling** | Tailwind CSS 3.4 |
 | **Database** | Supabase (PostgreSQL + Auth + Storage + Edge Functions) |
@@ -22,19 +22,21 @@ A full-stack personal finance management application built for the Pakistani mar
 
 ```
 FinSight/
-├── backend/                    # Express.js API server
-│   ├── src/
-│   │   ├── config/             # Env, Supabase, ElasticSearch, Email config
-│   │   ├── controllers/        # 10 request handler controllers
-│   │   ├── helpers/            # Response, pagination, date helpers
-│   │   ├── middleware/         # Auth, CORS, error handler, rate limit, validation
-│   │   ├── routes/             # 10 Express route modules
-│   │   ├── services/           # 10 business logic services
-│   │   ├── types/              # TypeScript interfaces
-│   │   ├── utils/              # Logger, validation, constants, currency
-│   │   ├── app.ts              # Express app setup
-│   │   ├── routes.ts           # Central route aggregator (/api/v1)
-│   │   └── server.ts           # Server entry point (port 5000)
+├── backend/                    # Next.js API server
+│   ├── app/
+│   │   └── api/v1/             # Next.js route handlers
+│   ├── config/                 # Env, Supabase, ElasticSearch, Email config
+│   ├── helpers/                # Date helpers
+│   ├── errors/                 # Shared HTTP/API errors
+│   ├── services/               # 10 business logic services
+│   ├── types/                  # TypeScript interfaces
+│   ├── utils/                  # Logger, validation, constants, currency
+│   ├── modules/                # Module organization placeholder
+│   ├── middleware/             # Middleware placeholder
+│   ├── policies/               # Authorization policies placeholder
+│   ├── rbac/                   # RBAC artifacts placeholder
+│   ├── tracing/                # Tracing assets placeholder
+│   ├── logs/                   # Runtime logs
 │   ├── supabase/               # Database schema, migrations, seed, edge functions
 │   ├── package.json
 │   └── tsconfig.json
@@ -104,7 +106,7 @@ Key frontend variable:
 
 | Variable | Description |
 |---|---|
-| `NEXT_PUBLIC_API_URL` | Backend API URL (default: `http://localhost:5000/api/v1`) |
+| `NEXT_PUBLIC_API_URL` | Backend API URL (default: `http://localhost:3000/api/v1`) |
 
 ### 3. Database Setup
 
@@ -125,17 +127,17 @@ supabase db seed
 ### 4. Run Development Servers
 
 ```bash
-# Terminal 1 — Backend (port 5000)
+# Terminal 1 — Backend (port 3000)
 cd backend
 npm run dev
 
-# Terminal 2 — Frontend (port 3000)
+# Terminal 2 — Frontend (port 5173)
 cd frontend
 npm run dev
 ```
 
-Backend API: [http://localhost:5000/api/v1/health](http://localhost:5000/api/v1/health)
-Frontend:    [http://localhost:3000](http://localhost:3000)
+Backend API: [http://localhost:3000/api/v1/health](http://localhost:3000/api/v1/health)
+Frontend:    [http://localhost:5173](http://localhost:5173)
 
 ## Features
 
@@ -180,7 +182,7 @@ Frontend:    [http://localhost:3000](http://localhost:3000)
 
 ## API Routes
 
-All endpoints are prefixed with `/api/v1` on the backend (port 5000).
+All endpoints are prefixed with `/api/v1` on the backend (port 3000).
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
