@@ -1,0 +1,128 @@
+import { NextRequest, NextResponse } from "next/server";
+import { requireStandardUser } from "@middleware/auth.middleware";
+import { validateBody } from "@middleware/validate.middleware";
+import { asyncHandler } from "@utils/asyncHandler";
+import { created } from "@utils/apiResponse";
+import { optionsResponse, withCors } from "@utils/cors";
+import {
+  createTransaction,
+  listTransactions,
+} from "@modules/transactions/transactions.service";
+import { z } from "zod";
+
+const transactionTypeSchema = z.enum(["income", "expense"]);
+const recurrenceSchema = z.enum(["none", "daily", "weekly", "monthly", "yearly"]);
+const dateStringSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format");
+
+const normalizedTagsSchema = z
+  .array(z.string().trim().min(1).max(50))
+  .max(20)
+  .transform((tags) => Array.from(new Set(tags.map((tag) => tag.trim()).filter(Boolean))));
+
+const transactionCreateSchema = z
+  .object({
+    type: transactionTypeSchema,
+    amount: z.coerce.number().positive().max(99999999999.99),
+    category_id: z.string().uuid().optional(),
+    description: z.string().trim().min(1, "Description is required").max(500),
+    notes: z.string().trim().max(2000).optional(),
+    transaction_date: dateStringSchema.optional(),
+    is_recurring: z.boolean().default(false),
+    recurrence: recurrenceSchema.default("none"),
+    tags: normalizedTagsSchema.optional(),
+  })
+  .superRefine((payload, ctx) => {
+    if (payload.is_recurring && payload.recurrence === "none") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["recurrence"],
+        message: "Recurrence frequency is required for recurring transactions",
+      });
+    }
+
+    if (!payload.is_recurring && payload.recurrence !== "none") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["recurrence"],
+        message: "Recurrence must be 'none' when transaction is not recurring",
+      });
+    }
+  });
+
+const querySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+  search: z.string().trim().max(120).optional(),
+  type: transactionTypeSchema.optional(),
+  categoryId: z.string().uuid().optional(),
+  dateFrom: dateStringSchema.optional(),
+  dateTo: dateStringSchema.optional(),
+  amountMin: z.coerce.number().min(0).optional(),
+  amountMax: z.coerce.number().min(0).optional(),
+  tags: z.string().trim().max(300).optional(),
+}).superRefine((payload, ctx) => {
+  if (payload.dateFrom && payload.dateTo && payload.dateFrom > payload.dateTo) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["dateTo"],
+      message: "End date must be greater than or equal to start date",
+    });
+  }
+
+  if (
+    typeof payload.amountMin === "number" &&
+    typeof payload.amountMax === "number" &&
+    payload.amountMin > payload.amountMax
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["amountMax"],
+      message: "Maximum amount must be greater than or equal to minimum amount",
+    });
+  }
+});
+
+export const GET = asyncHandler(async (req: NextRequest) => {
+  const user = await requireStandardUser(req);
+  const params = validateBody(querySchema, {
+    page: req.nextUrl.searchParams.get("page") || undefined,
+    pageSize: req.nextUrl.searchParams.get("pageSize") || undefined,
+    search: req.nextUrl.searchParams.get("search") || undefined,
+    type: req.nextUrl.searchParams.get("type") || undefined,
+    categoryId: req.nextUrl.searchParams.get("categoryId") || undefined,
+    dateFrom: req.nextUrl.searchParams.get("dateFrom") || undefined,
+    dateTo: req.nextUrl.searchParams.get("dateTo") || undefined,
+    amountMin: req.nextUrl.searchParams.get("amountMin") || undefined,
+    amountMax: req.nextUrl.searchParams.get("amountMax") || undefined,
+    tags: req.nextUrl.searchParams.get("tags") || undefined,
+  });
+
+  const result = await listTransactions(user.id, params);
+
+  return withCors(
+    req,
+    NextResponse.json({
+      success: true,
+      data: result.data,
+      pagination: result.pagination,
+      total: result.pagination.total,
+      page: result.pagination.page,
+      pageSize: result.pagination.pageSize,
+      totalPages: result.pagination.totalPages,
+    }),
+    "GET,POST,OPTIONS"
+  );
+});
+
+export const POST = asyncHandler(async (req: NextRequest) => {
+  const user = await requireStandardUser(req);
+  const payload = validateBody(transactionCreateSchema, await req.json());
+  const transaction = await createTransaction(user.id, payload);
+  return withCors(req, created(transaction), "GET,POST,OPTIONS");
+});
+
+export function OPTIONS(req: Request) {
+  return optionsResponse(req, "GET,POST,OPTIONS");
+}
