@@ -41,7 +41,7 @@ export default function AdminUsersPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [createForm, setCreateForm] = useState({ email: "", full_name: "", password: "", role: "user" as UserRole });
-  const [editForm, setEditForm] = useState({ email: "", full_name: "", role: "user" as UserRole, is_active: true });
+  const [editForm, setEditForm] = useState({ role: "user" as UserRole, is_active: true });
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -96,13 +96,8 @@ export default function AdminUsersPage() {
   });
 
   const updateUserMutation = useMutation({
-    mutationFn: (payload: {
-      userId: string;
-      email: string;
-      full_name: string;
-      role: UserRole;
-      is_active: boolean;
-    }) => apiPatch<AdminUser>("/admin/users", payload),
+    mutationFn: (payload: { userId: string; role?: UserRole; is_active?: boolean }) =>
+      apiPatch<AdminUser>("/admin/users", payload),
     onSuccess: () => {
       toast.success("User updated successfully");
       setEditingUser(null);
@@ -167,8 +162,6 @@ export default function AdminUsersPage() {
   const openEditModal = (user: AdminUser) => {
     setEditingUser(user);
     setEditForm({
-      email: user.email,
-      full_name: user.full_name || "",
       role: user.role,
       is_active: user.is_active ?? true,
     });
@@ -186,18 +179,12 @@ export default function AdminUsersPage() {
   const submitEditUser = () => {
     if (!editingUser) return;
 
-    if (!editForm.email || !editForm.full_name) {
-      toast.error("Email and full name are required");
-      return;
-    }
-
+    // Admins are not allowed to change email or full name from the UI.
     updateUserMutation.mutate({
       userId: editingUser.id,
-      email: editForm.email,
-      full_name: editForm.full_name,
       role: editForm.role,
       is_active: editForm.is_active,
-    });
+    } as any);
   };
 
   const deleteUser = (user: AdminUser) => {
@@ -394,17 +381,14 @@ export default function AdminUsersPage() {
 
       <Modal isOpen={Boolean(editingUser)} onClose={() => setEditingUser(null)} title="Edit User" size="md">
         <div className="space-y-4">
-          <Input
-            label="Full Name"
-            value={editForm.full_name}
-            onChange={(event) => setEditForm((current) => ({ ...current, full_name: event.target.value }))}
-          />
-          <Input
-            label="Email"
-            type="email"
-            value={editForm.email}
-            onChange={(event) => setEditForm((current) => ({ ...current, email: event.target.value }))}
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Full Name</label>
+            <div className="mt-1 text-sm text-gray-900">{editingUser?.full_name || "—"}</div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Email</label>
+            <div className="mt-1 text-sm text-gray-600">{editingUser?.email}</div>
+          </div>
           <Select
             label="Role"
             value={editForm.role}
